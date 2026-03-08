@@ -127,6 +127,151 @@
   background: rgba(59, 130, 246, 0.25);
 }
 
+.sidebar-new-form {
+  margin: 0.75rem 1rem 0;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sidebar-new-input {
+  padding: 0.5rem 0.6rem;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  color: #0f172a;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.sidebar-new-input::placeholder {
+  color: #94a3b8;
+}
+
+.sidebar-new-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.sidebar-new-create {
+  flex: 1;
+  padding: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #fff;
+  background: #3b82f6;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.sidebar-new-create:hover {
+  background: #2563eb;
+}
+
+.sidebar-new-cancel {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  color: #64748b;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.sidebar-new-cancel:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-tab-rename-input {
+  width: 100%;
+  padding: 0.2rem 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #0f172a;
+  background: #f1f5f9;
+  border: 1px solid #3b82f6;
+  border-radius: 4px;
+}
+
+.sidebar-tab-unsaved {
+  color: #eab308;
+  font-weight: 700;
+  margin-left: 0.15rem;
+}
+
+.sidebar-tab-active .sidebar-tab-unsaved {
+  color: #ca8a04;
+}
+
+.sidebar-delete-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.sidebar-delete-modal {
+  background: #1e293b;
+  padding: 1.25rem;
+  border-radius: 12px;
+  min-width: 240px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.sidebar-delete-modal p {
+  margin: 0 0 1rem 0;
+  color: #e2e8f0;
+  font-size: 0.9375rem;
+}
+
+.sidebar-delete-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.sidebar-delete-yes {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #fff;
+  background: #dc2626;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.sidebar-delete-yes:hover {
+  background: #b91c1c;
+}
+
+.sidebar-delete-no {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.sidebar-delete-no:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
 /* Main content area */
 .app-main {
   flex: 1;
@@ -139,6 +284,73 @@
 .header {
   text-align: center;
   margin-bottom: 2rem;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  position: relative;
+  flex-wrap: wrap;
+}
+
+.header-top .app-title {
+  margin: 0;
+}
+
+.save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #fff;
+  background: #3b82f6;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+.save-btn:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.save-toast {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0f172a;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 50;
+  animation: saveToastFade 2s ease-out forwards;
+}
+
+.save-toast-saved {
+  border-left: 4px solid #16a34a;
+}
+
+.save-toast-auto-saved {
+  border-left: 4px solid #3b82f6;
+}
+
+@keyframes saveToastFade {
+  0%, 70% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 .app-title {

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import './App.css';
 
@@ -353,10 +353,23 @@ function getDefaultPlanners() {
 function App() {
   const [planners, setPlanners] = useState(getDefaultPlanners);
   const [activePlannerId, setActivePlannerId] = useState(() => getDefaultPlanners()[0].id);
+  const [unsavedPlannerIds, setUnsavedPlannerIds] = useState([]);
+  const [showNewPlannerForm, setShowNewPlannerForm] = useState(false);
+  const [newPlannerName, setNewPlannerName] = useState('');
+  const [newPlannerIncome, setNewPlannerIncome] = useState('');
+  const [editingPlannerId, setEditingPlannerId] = useState(null);
+  const [editingPlannerName, setEditingPlannerName] = useState('');
+  const [plannerToDelete, setPlannerToDelete] = useState(null);
+  const [saveMessage, setSaveMessage] = useState(null);
 
   const activePlanner = planners.find((p) => p.id === activePlannerId) ?? planners[0];
   const income = activePlanner?.income ?? '';
   const panels = activePlanner?.panels ?? initialPanels();
+  const isActiveUnsaved = unsavedPlannerIds.includes(activePlannerId);
+
+  const markActiveUnsaved = useCallback(() => {
+    setUnsavedPlannerIds((prev) => (prev.includes(activePlannerId) ? prev : [...prev, activePlannerId]));
+  }, [activePlannerId]);
 
   const handleIncomeChange = useCallback(
     (e) => {
@@ -364,8 +377,9 @@ function App() {
       setPlanners((prev) =>
         prev.map((p) => (p.id === activePlannerId ? { ...p, income: value } : p))
       );
+      markActiveUnsaved();
     },
-    [activePlannerId]
+    [activePlannerId, markActiveUnsaved]
   );
 
   const updateRow = useCallback(
@@ -381,8 +395,9 @@ function App() {
         };
         return prev.map((p) => (p.id === activePlannerId ? { ...p, panels: newPanels } : p));
       });
+      markActiveUnsaved();
     },
-    [activePlannerId]
+    [activePlannerId, markActiveUnsaved]
   );
 
   const addRow = useCallback(
@@ -396,28 +411,94 @@ function App() {
         };
         return prev.map((p) => (p.id === activePlannerId ? { ...p, panels: newPanels } : p));
       });
+      markActiveUnsaved();
     },
-    [activePlannerId]
+    [activePlannerId, markActiveUnsaved]
   );
 
-  const handleSelectPlanner = useCallback((id) => setActivePlannerId(id), []);
-
-  const handleNewPlanner = useCallback(() => {
-    const name = window.prompt('Planner name (e.g. profession or "My Budget")?', 'My Budget');
-    if (name == null || name.trim() === '') return;
-    const incomeStr = window.prompt('Monthly income?', '0');
-    const incomeVal = incomeStr != null ? incomeStr.trim() : '0';
-    const id = `planner-${Date.now()}`;
-    setPlanners((prev) => [...prev, createEmptyPlanner(id, name.trim(), incomeVal)]);
+  const handleSelectPlanner = useCallback((id) => {
     setActivePlannerId(id);
+    setEditingPlannerId(null);
   }, []);
 
-  const handleDeletePlanner = useCallback((e, id) => {
+  const handleSave = useCallback(() => {
+    setUnsavedPlannerIds((prev) => prev.filter((id) => id !== activePlannerId));
+    setSaveMessage('saved');
+  }, [activePlannerId]);
+
+  useEffect(() => {
+    if (saveMessage === null) return;
+    const t = setTimeout(() => setSaveMessage(null), 2000);
+    return () => clearTimeout(t);
+  }, [saveMessage]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setUnsavedPlannerIds((prev) => {
+        if (!prev.includes(activePlannerId)) return prev;
+        setSaveMessage('auto-saved');
+        return prev.filter((id) => id !== activePlannerId);
+      });
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [activePlannerId]);
+
+  const handleNewPlannerOpen = useCallback(() => {
+    setShowNewPlannerForm(true);
+    setNewPlannerName('');
+    setNewPlannerIncome('');
+  }, []);
+
+  const handleNewPlannerCreate = useCallback(() => {
+    const name = newPlannerName.trim() || 'My Budget';
+    const incomeVal = newPlannerIncome.trim() || '0';
+    const id = `planner-${Date.now()}`;
+    setPlanners((prev) => [...prev, createEmptyPlanner(id, name, incomeVal)]);
+    setActivePlannerId(id);
+    setShowNewPlannerForm(false);
+    setNewPlannerName('');
+    setNewPlannerIncome('');
+  }, [newPlannerName, newPlannerIncome]);
+
+  const handleNewPlannerCancel = useCallback(() => {
+    setShowNewPlannerForm(false);
+    setNewPlannerName('');
+    setNewPlannerIncome('');
+  }, []);
+
+  const handleRenameStart = useCallback((e, planner) => {
+    e.stopPropagation();
+    setEditingPlannerId(planner.id);
+    setEditingPlannerName(planner.name);
+  }, []);
+
+  const handleRenameSubmit = useCallback(
+    (id) => {
+      const name = editingPlannerName.trim() || 'My Budget';
+      setPlanners((prev) => prev.map((p) => (p.id === id ? { ...p, name } : p)));
+      setEditingPlannerId(null);
+      setEditingPlannerName('');
+    },
+    [editingPlannerName]
+  );
+
+  const handleDeleteClick = useCallback((e, id) => {
     e.stopPropagation();
     if (planners.length <= 1) return;
-    setPlanners((prev) => prev.filter((p) => p.id !== id));
-    setActivePlannerId((current) => (current === id ? planners.find((p) => p.id !== id)?.id ?? current : current));
-  }, [planners]);
+    setPlannerToDelete(id);
+  }, [planners.length]);
+
+  const handleDeleteConfirm = useCallback((confirm) => {
+    if (!plannerToDelete) return;
+    if (confirm) {
+      const remaining = planners.filter((p) => p.id !== plannerToDelete);
+      const nextActiveId = remaining[0]?.id;
+      setPlanners((prev) => prev.filter((p) => p.id !== plannerToDelete));
+      setActivePlannerId((current) => (current === plannerToDelete ? nextActiveId : current));
+      setUnsavedPlannerIds((prev) => prev.filter((id) => id !== plannerToDelete));
+    }
+    setPlannerToDelete(null);
+  }, [plannerToDelete, planners]);
 
   const numIncome = parseFloat(income) || 0;
 
@@ -485,40 +566,126 @@ function App() {
             >
               <span className="sidebar-tab-dot" style={{ backgroundColor: planner.id === activePlannerId ? '#3b82f6' : '#64748b' }} />
               <div className="sidebar-tab-content">
-                <span className="sidebar-tab-name">{planner.name}</span>
-                <span className="sidebar-tab-income">
-                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(parseFloat(planner.income) || 0)}/mo
-                </span>
+                {editingPlannerId === planner.id ? (
+                  <input
+                    type="text"
+                    className="sidebar-tab-rename-input"
+                    value={editingPlannerName}
+                    onChange={(e) => setEditingPlannerName(e.target.value)}
+                    onBlur={() => handleRenameSubmit(planner.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleRenameSubmit(planner.id);
+                      if (e.key === 'Escape') setEditingPlannerId(null);
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    autoFocus
+                  />
+                ) : (
+                  <>
+                    <span
+                      className="sidebar-tab-name"
+                      onDoubleClick={(e) => handleRenameStart(e, planner)}
+                      title="Double-click to rename"
+                    >
+                      {planner.name}
+                      {unsavedPlannerIds.includes(planner.id) && <span className="sidebar-tab-unsaved" title="Unsaved changes"> •</span>}
+                    </span>
+                    <span className="sidebar-tab-income">
+                      {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(parseFloat(planner.income) || 0)}/mo
+                    </span>
+                  </>
+                )}
               </div>
-              {planners.length > 1 && (
-              <button
-                type="button"
-                className="sidebar-tab-delete"
-                onClick={(e) => handleDeletePlanner(e, planner.id)}
-                title="Delete planner"
-                aria-label="Delete planner"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="3 6 5 6 21 6" />
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                  <line x1="10" y1="11" x2="10" y2="17" />
-                  <line x1="14" y1="11" x2="14" y2="17" />
-                </svg>
-              </button>
+              {planners.length > 1 && editingPlannerId !== planner.id && (
+                <button
+                  type="button"
+                  className="sidebar-tab-delete"
+                  onClick={(e) => handleDeleteClick(e, planner.id)}
+                  title="Delete planner"
+                  aria-label="Delete planner"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    <line x1="10" y1="11" x2="10" y2="17" />
+                    <line x1="14" y1="11" x2="14" y2="17" />
+                  </svg>
+                </button>
               )}
             </li>
           ))}
         </ul>
-        <button type="button" className="sidebar-new-btn" onClick={handleNewPlanner}>
-          + New Planner
-        </button>
+        {showNewPlannerForm ? (
+          <div className="sidebar-new-form">
+            <input
+              type="text"
+              className="sidebar-new-input"
+              placeholder="Profession / Planner name"
+              value={newPlannerName}
+              onChange={(e) => setNewPlannerName(e.target.value)}
+            />
+            <input
+              type="number"
+              inputMode="decimal"
+              className="sidebar-new-input"
+              placeholder="Monthly income"
+              value={newPlannerIncome}
+              onChange={(e) => setNewPlannerIncome(e.target.value)}
+            />
+            <div className="sidebar-new-actions">
+              <button type="button" className="sidebar-new-create" onClick={handleNewPlannerCreate}>
+                Create Planner
+              </button>
+              <button type="button" className="sidebar-new-cancel" onClick={handleNewPlannerCancel}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button type="button" className="sidebar-new-btn" onClick={handleNewPlannerOpen}>
+            + New Planner
+          </button>
+        )}
+        {plannerToDelete && (
+          <div className="sidebar-delete-overlay" onClick={() => handleDeleteConfirm(false)}>
+            <div className="sidebar-delete-modal" onClick={(e) => e.stopPropagation()}>
+              <p>Delete this planner?</p>
+              <div className="sidebar-delete-actions">
+                <button type="button" className="sidebar-delete-yes" onClick={() => handleDeleteConfirm(true)}>Yes</button>
+                <button type="button" className="sidebar-delete-no" onClick={() => handleDeleteConfirm(false)}>No</button>
+              </div>
+            </div>
+          </div>
+        )}
       </aside>
 
       <div className="app-main">
         <header className="header">
-          <h1 className="app-title">BudgetFlow</h1>
+          <div className="header-top">
+            <h1 className="app-title">BudgetFlow</h1>
+            <button
+              type="button"
+              className="save-btn"
+              onClick={handleSave}
+              title="Save current planner"
+              disabled={!isActiveUnsaved}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                <polyline points="17 21 17 13 7 13 7 21" />
+                <polyline points="7 3 7 8 15 8" />
+              </svg>
+              Save
+            </button>
+          </div>
           <p className="app-tagline">Your monthly budget tracker</p>
         </header>
+
+        {saveMessage && (
+          <div className={`save-toast save-toast-${saveMessage}`}>
+            {saveMessage === 'saved' ? 'Saved!' : 'Auto-saved'}
+          </div>
+        )}
 
         <main className="main">
           <section className="income-section">
