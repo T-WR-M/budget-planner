@@ -37,22 +37,6 @@
   position: relative;
 }
 
-.sidebar-drop-line {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 3px;
-  background: #3b82f6;
-  z-index: 2;
-  pointer-events: none;
-}
-
-.sidebar-drop-line-after {
-  top: auto;
-  bottom: 0;
-}
-
 .sidebar-drag-handle {
   flex-shrink: 0;
   display: flex;
@@ -61,12 +45,6 @@
   padding: 0.2rem;
   color: #64748b;
   cursor: grab;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.sidebar-tab:hover .sidebar-drag-handle {
-  opacity: 1;
 }
 
 .sidebar-drag-handle:active {
@@ -75,7 +53,12 @@
 
 .sidebar-tab-dragging {
   opacity: 0.5;
+  cursor: grabbing;
   pointer-events: none;
+}
+
+.sidebar-tab-dragover {
+  border-top: 2px solid #3b82f6;
 }
 
 .sidebar-tab-name-wrap {

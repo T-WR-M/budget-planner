@@ -418,8 +418,8 @@ function App() {
   const [editingPlannerName, setEditingPlannerName] = useState('');
   const [plannerToDelete, setPlannerToDelete] = useState(null);
   const [saveMessage, setSaveMessage] = useState(null);
-  const [draggedPlannerId, setDraggedPlannerId] = useState(null);
-  const [dropTargetIndex, setDropTargetIndex] = useState(null);
+  const [dragIndex, setDragIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   useEffect(() => {
     try {
@@ -584,50 +584,23 @@ function App() {
     setPlannerToDelete(id);
   }, [planners.length]);
 
-  const handleDragStart = useCallback((e, plannerId) => {
-    if (editingPlannerId) return;
-    setDraggedPlannerId(plannerId);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', plannerId);
-    e.dataTransfer.setDragImage(e.currentTarget, 0, 0);
-  }, [editingPlannerId]);
-
-  const handleDragEnd = useCallback(() => {
-    setDraggedPlannerId(null);
-    setDropTargetIndex(null);
-  }, []);
-
-  const handleDragOver = useCallback((e, index) => {
+  const handleDrop = useCallback((e, dropIndex) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    if (draggedPlannerId == null) return;
-    const fromIndex = planners.findIndex((p) => p.id === draggedPlannerId);
-    if (fromIndex === -1) return;
-    if (index === fromIndex) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const before = e.clientY < rect.top + rect.height / 2;
-    setDropTargetIndex(before ? index : index + 1);
-  }, [draggedPlannerId, planners]);
-
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    if (draggedPlannerId == null || dropTargetIndex == null) return;
-    const fromIndex = planners.findIndex((p) => p.id === draggedPlannerId);
-    if (fromIndex === -1) return;
-    let insertIndex = dropTargetIndex;
-    if (fromIndex < dropTargetIndex) insertIndex = dropTargetIndex - 1;
-    if (fromIndex === insertIndex) {
-      setDraggedPlannerId(null);
-      setDropTargetIndex(null);
+    if (dragIndex == null) return;
+    if (dragIndex === dropIndex) {
+      setDragIndex(null);
+      setDragOverIndex(null);
       return;
     }
     const next = [...planners];
-    const [removed] = next.splice(fromIndex, 1);
-    next.splice(insertIndex, 0, removed);
+    const [removed] = next.splice(dragIndex, 1);
+    let insertAt = dropIndex;
+    if (dragIndex < dropIndex) insertAt = dropIndex - 1;
+    next.splice(insertAt, 0, removed);
     setPlanners(next);
-    setDraggedPlannerId(null);
-    setDropTargetIndex(null);
-  }, [draggedPlannerId, dropTargetIndex, planners]);
+    setDragIndex(null);
+    setDragOverIndex(null);
+  }, [dragIndex, planners]);
 
   const handleDeleteConfirm = useCallback((confirm) => {
     if (!plannerToDelete) return;
@@ -730,22 +703,27 @@ function App() {
         <ul className="sidebar-tabs">
           {planners.map((planner, index) => {
             const isExpanded = expandedPlannerIds.includes(planner.id);
-            const isDragging = draggedPlannerId === planner.id;
+            const isDragging = dragIndex === index;
+            const isDragOver = dragOverIndex === index;
             return (
-              <li
-                key={planner.id}
-                className="sidebar-planner-wrap"
-                data-index={index}
-                onDragOver={(e) => handleDragOver(e, index)}
-                onDrop={handleDrop}
-              >
-                {dropTargetIndex === index && <div className="sidebar-drop-line" />}
-                {index === planners.length - 1 && dropTargetIndex === planners.length && <div className="sidebar-drop-line sidebar-drop-line-after" />}
+              <li key={planner.id} className="sidebar-planner-wrap">
                 <div
-                  className={`sidebar-tab ${planner.id === activePlannerId ? 'sidebar-tab-active' : ''} ${isDragging ? 'sidebar-tab-dragging' : ''}`}
+                  className={`sidebar-tab ${planner.id === activePlannerId ? 'sidebar-tab-active' : ''} ${isDragging ? 'sidebar-tab-dragging' : ''} ${isDragOver ? 'sidebar-tab-dragover' : ''}`}
                   draggable={!editingPlannerId}
-                  onDragStart={(e) => handleDragStart(e, planner.id)}
-                  onDragEnd={handleDragEnd}
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', String(index));
+                    setDragIndex(index);
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    if (dragIndex !== index) setDragOverIndex(index);
+                  }}
+                  onDrop={(e) => handleDrop(e, index)}
+                  onDragEnd={() => {
+                    setDragIndex(null);
+                    setDragOverIndex(null);
+                  }}
                   onClick={(e) => {
                     if (editingPlannerId === planner.id) return;
                     const target = e.target;
