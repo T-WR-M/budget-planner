@@ -296,14 +296,15 @@ function createRow(id, name = '', planned = '', actual = '') {
   return { id, name, planned: planned === '' ? '' : String(planned), actual: actual === '' ? '' : String(actual) };
 }
 
-function createEmptyPanel(placeholders, count = 10) {
+function createEmptyPanel(placeholders, count = 8) {
   return Array.from({ length: count }, (_, i) =>
     createRow(`row-${Date.now()}-${i}`, '', '', '')
   );
 }
 
-function templateToRows(templateRows, minRows = 10) {
-  const base = (templateRows || []).map((r, i) =>
+function templateToRows(templateRows, minRows = 8) {
+  const sliced = (templateRows || []).slice(0, minRows);
+  const base = sliced.map((r, i) =>
     createRow(`row-${Date.now()}-${i}`, r.name, r.planned, '')
   );
   while (base.length < minRows) {
@@ -316,7 +317,7 @@ const initialPanels = () => {
   const panels = {};
   PANEL_KEYS.forEach((key) => {
     const config = PANELS.find((p) => p.key === key);
-    panels[key] = createEmptyPanel(config?.placeholders || [], 10);
+    panels[key] = createEmptyPanel(config?.placeholders || [], 8);
   });
   return panels;
 };
@@ -762,9 +763,9 @@ function App() {
                 <div className="panel-totals panel-totals-top">
                   <div className="panel-totals-main">
                     <span className="panel-total-actual" style={{ color: panel.accent }}>{formatCurrency(totals.actual)}</span>
-                    <span className="panel-total-planned">Planned {formatCurrency(totals.planned)}</span>
+                    <span className="panel-total-pct-large">{pctIncome.toFixed(1)}%</span>
                   </div>
-                  <span className="panel-total-pct-large">{pctIncome.toFixed(1)}%</span>
+                  <span className="panel-total-planned">Planned {formatCurrency(totals.planned)}</span>
                 </div>
                 <div className="panel-rows">
                   <div className="panel-row panel-row-header">
@@ -772,7 +773,7 @@ function App() {
                     <span className="row-planned">Planned</span>
                     <span className="row-actual">Actual</span>
                   </div>
-                  {rows.map((row, idx) => (
+                  {rows.slice(0, 8).map((row, idx) => (
                     <div key={row.id} className="panel-row">
                       <input
                         type="text"

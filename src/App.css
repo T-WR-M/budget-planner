@@ -277,13 +277,16 @@
   flex: 1;
   min-width: 0;
   background: linear-gradient(160deg, #f8fafc 0%, #e2e8f0 50%, #f1f5f9 100%);
-  padding: 2rem 1.5rem 3rem;
-  overflow-y: auto;
+  padding: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 8px;
+  flex-shrink: 0;
 }
 
 .header-top {
@@ -370,13 +373,17 @@
 }
 
 .main {
-  max-width: 960px;
-  margin: 0 auto;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* Income section */
 .income-section {
-  margin-bottom: 2rem;
+  margin-bottom: 8px;
+  flex-shrink: 0;
 }
 
 .income-label {
@@ -440,98 +447,105 @@
   -moz-appearance: textfield;
 }
 
-/* Budget panels — 2x2 grid */
+/* Budget panels — 4 columns, one row */
 .panels-section {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 1.5rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+  flex: 1;
+  min-height: 0;
 }
 
 .budget-panel {
   position: relative;
   background: #ffffff;
-  border-radius: 16px;
-  padding: 0.75rem 12px 0.75rem 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: 4px;
+  padding: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
   overflow: hidden;
+  border-top: 3px solid transparent;
+  min-width: 0;
 }
 
+.budget-panel[data-panel='bills'] { border-top-color: #2563eb; }
+.budget-panel[data-panel='expenses'] { border-top-color: #f97316; }
+.budget-panel[data-panel='debt'] { border-top-color: #16a34a; }
+.budget-panel[data-panel='savings'] { border-top-color: #7c3aed; }
+
 .panel-accent {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  border-radius: 4px 0 0 4px;
+  display: none;
 }
 
 .panel-title {
-  font-size: 1rem;
+  font-size: 13px;
   font-weight: 700;
   color: #0f172a;
-  margin: 0 0 0.5rem 0;
-  padding-bottom: 0.35rem;
-  border-bottom: 2px solid transparent;
+  margin: 0 0 4px 0;
+  padding-bottom: 2px;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .panel-rows {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0;
 }
 
 .panel-row {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   align-items: center;
+  height: 28px;
+  max-height: 28px;
 }
 
 .panel-row-header {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   align-items: center;
-  margin-bottom: 0.15rem;
-  padding-bottom: 0.2rem;
+  height: 22px;
+  margin-bottom: 2px;
+  padding-bottom: 2px;
   border-bottom: 1px solid #e2e8f0;
 }
 
 .panel-row-header .row-label {
   flex: 1;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   color: #64748b;
 }
 
 .panel-row-header .row-planned,
 .panel-row-header .row-actual {
-  flex: 0 0 80px;
-  width: 80px;
-  font-size: 11px;
+  flex: 0 0 60px;
+  width: 60px;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   color: #64748b;
   text-align: right;
 }
 
 .row-input {
-  padding: 0.25rem 0.35rem;
-  font-size: 12px;
+  height: 24px;
+  padding: 0 4px;
+  font-size: 11px;
   font-family: inherit;
   color: #0f172a;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  transition: border-color 0.15s;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 3px;
+  box-sizing: border-box;
 }
 
 .row-input:focus {
   outline: none;
-  border-color: #94a3b8;
+  background: #e2e8f0;
 }
 
 .row-input::placeholder {
@@ -544,56 +558,55 @@
 }
 
 .row-amount {
-  flex: 0 0 80px;
-  width: 80px;
+  flex: 0 0 60px;
+  width: 60px;
   text-align: right;
 }
 
-/* Totals at top of panel — dashboard stat style */
+/* Totals at top of panel — compact */
 .panel-totals.panel-totals-top {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
-  padding-bottom: 0.5rem;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 4px;
+  padding-bottom: 4px;
   border-bottom: 1px solid #e2e8f0;
 }
 
 .panel-totals-main {
   display: flex;
   align-items: baseline;
-  gap: 0.5rem;
+  gap: 6px;
 }
 
 .panel-total-actual {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
 .panel-total-planned {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   color: #64748b;
 }
 
 .panel-total-pct-large {
-  font-size: 20px;
-  font-weight: 700;
-  color: #0f172a;
-  letter-spacing: -0.02em;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  letter-spacing: -0.01em;
 }
 
 .add-row-btn {
-  margin-top: 0.35rem;
-  padding: 0.3rem 0.5rem;
-  font-size: 0.6875rem;
+  margin-top: 4px;
+  padding: 2px 4px;
+  font-size: 10px;
   font-weight: 600;
   font-family: inherit;
   background: transparent;
   border: 1px dashed;
-  border-radius: 6px;
+  border-radius: 3px;
   cursor: pointer;
   transition: background-color 0.15s, opacity 0.15s;
 }
@@ -605,8 +618,9 @@
 
 /* Chart section */
 .chart-section {
-  margin: 1.5rem auto;
-  max-width: 600px;
+  margin: 8px auto;
+  max-width: 560px;
+  flex-shrink: 0;
 }
 
 .chart-card {
@@ -705,11 +719,7 @@
 }
 
 @media (min-width: 640px) {
-  .app-main {
-    padding: 3rem 2rem 4rem;
-  }
-
   .app-title {
-    font-size: 2.75rem;
+    font-size: 2rem;
   }
 }
