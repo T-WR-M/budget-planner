@@ -418,6 +418,8 @@ function App() {
   const [editingPlannerName, setEditingPlannerName] = useState('');
   const [plannerToDelete, setPlannerToDelete] = useState(null);
   const [saveMessage, setSaveMessage] = useState(null);
+  const [draggedPlannerId, setDraggedPlannerId] = useState(null);
+  const [dropTargetIndex, setDropTargetIndex] = useState(null);
 
   useEffect(() => {
     try {
@@ -561,6 +563,11 @@ function App() {
     setEditingPlannerName(planner.name);
   }, []);
 
+  const handleRenameCancel = useCallback(() => {
+    setEditingPlannerId(null);
+    setEditingPlannerName('');
+  }, []);
+
   const handleRenameSubmit = useCallback(
     (id) => {
       const name = editingPlannerName.trim() || 'My Budget';
@@ -576,6 +583,51 @@ function App() {
     if (planners.length <= 1) return;
     setPlannerToDelete(id);
   }, [planners.length]);
+
+  const handleDragStart = useCallback((e, plannerId) => {
+    if (editingPlannerId) return;
+    setDraggedPlannerId(plannerId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', plannerId);
+    e.dataTransfer.setDragImage(e.currentTarget, 0, 0);
+  }, [editingPlannerId]);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggedPlannerId(null);
+    setDropTargetIndex(null);
+  }, []);
+
+  const handleDragOver = useCallback((e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (draggedPlannerId == null) return;
+    const fromIndex = planners.findIndex((p) => p.id === draggedPlannerId);
+    if (fromIndex === -1) return;
+    if (index === fromIndex) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const before = e.clientY < rect.top + rect.height / 2;
+    setDropTargetIndex(before ? index : index + 1);
+  }, [draggedPlannerId, planners]);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    if (draggedPlannerId == null || dropTargetIndex == null) return;
+    const fromIndex = planners.findIndex((p) => p.id === draggedPlannerId);
+    if (fromIndex === -1) return;
+    let insertIndex = dropTargetIndex;
+    if (fromIndex < dropTargetIndex) insertIndex = dropTargetIndex - 1;
+    if (fromIndex === insertIndex) {
+      setDraggedPlannerId(null);
+      setDropTargetIndex(null);
+      return;
+    }
+    const next = [...planners];
+    const [removed] = next.splice(fromIndex, 1);
+    next.splice(insertIndex, 0, removed);
+    setPlanners(next);
+    setDraggedPlannerId(null);
+    setDropTargetIndex(null);
+  }, [draggedPlannerId, dropTargetIndex, planners]);
 
   const handleDeleteConfirm = useCallback((confirm) => {
     if (!plannerToDelete) return;
@@ -676,20 +728,43 @@ function App() {
       <aside className="sidebar">
         <h2 className="sidebar-title">My Planners</h2>
         <ul className="sidebar-tabs">
-          {planners.map((planner) => {
+          {planners.map((planner, index) => {
             const isExpanded = expandedPlannerIds.includes(planner.id);
+            const isDragging = draggedPlannerId === planner.id;
             return (
-              <li key={planner.id} className="sidebar-planner-wrap">
+              <li
+                key={planner.id}
+                className="sidebar-planner-wrap"
+                data-index={index}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDrop={handleDrop}
+              >
+                {dropTargetIndex === index && <div className="sidebar-drop-line" />}
+                {index === planners.length - 1 && dropTargetIndex === planners.length && <div className="sidebar-drop-line sidebar-drop-line-after" />}
                 <div
-                  className={`sidebar-tab ${planner.id === activePlannerId ? 'sidebar-tab-active' : ''}`}
+                  className={`sidebar-tab ${planner.id === activePlannerId ? 'sidebar-tab-active' : ''} ${isDragging ? 'sidebar-tab-dragging' : ''}`}
+                  draggable={!editingPlannerId}
+                  onDragStart={(e) => handleDragStart(e, planner.id)}
+                  onDragEnd={handleDragEnd}
                   onClick={(e) => {
                     if (editingPlannerId === planner.id) return;
                     const target = e.target;
                     if (target.closest('.sidebar-tab-delete')) return;
                     if (target.closest('.sidebar-tab-rename-input')) return;
+                    if (target.closest('.sidebar-drag-handle')) return;
                     togglePlannerExpanded(e, planner.id);
                   }}
                 >
+                  <span className="sidebar-drag-handle" title="Drag to reorder">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                      <circle cx="9" cy="6" r="1.5" />
+                      <circle cx="15" cy="6" r="1.5" />
+                      <circle cx="9" cy="12" r="1.5" />
+                      <circle cx="15" cy="12" r="1.5" />
+                      <circle cx="9" cy="18" r="1.5" />
+                      <circle cx="15" cy="18" r="1.5" />
+                    </svg>
+                  </span>
                   <span className={`sidebar-chevron ${isExpanded ? 'sidebar-chevron-open' : ''}`} />
                   <span className="sidebar-tab-dot" style={{ backgroundColor: planner.id === activePlannerId ? '#3b82f6' : '#64748b' }} />
                   <div className="sidebar-tab-content">
@@ -702,7 +777,7 @@ function App() {
                         onBlur={() => handleRenameSubmit(planner.id)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') handleRenameSubmit(planner.id);
-                          if (e.key === 'Escape') setEditingPlannerId(null);
+                          if (e.key === 'Escape') handleRenameCancel();
                         }}
                         onClick={(e) => e.stopPropagation()}
                         autoFocus
@@ -710,12 +785,20 @@ function App() {
                     ) : (
                       <>
                         <span
-                          className="sidebar-tab-name"
+                          className="sidebar-tab-name-wrap"
                           onDoubleClick={(e) => handleRenameStart(e, planner)}
                           title="Double-click to rename"
                         >
-                          {planner.name}
-                          {unsavedPlannerIds.includes(planner.id) && <span className="sidebar-tab-unsaved" title="Unsaved changes"> •</span>}
+                          <span className="sidebar-tab-name">
+                            {planner.name}
+                            {unsavedPlannerIds.includes(planner.id) && <span className="sidebar-tab-unsaved" title="Unsaved changes"> •</span>}
+                          </span>
+                          <span className="sidebar-pencil-icon" aria-hidden>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                            </svg>
+                          </span>
                         </span>
                         <span className="sidebar-tab-income">
                           {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(parseFloat(planner.income) || 0)}/mo

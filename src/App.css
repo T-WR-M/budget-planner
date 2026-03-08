@@ -34,6 +34,65 @@
 .sidebar-planner-wrap {
   list-style: none;
   margin: 0 0 0.25rem 0;
+  position: relative;
+}
+
+.sidebar-drop-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: #3b82f6;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.sidebar-drop-line-after {
+  top: auto;
+  bottom: 0;
+}
+
+.sidebar-drag-handle {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem;
+  color: #64748b;
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.sidebar-tab:hover .sidebar-drag-handle {
+  opacity: 1;
+}
+
+.sidebar-drag-handle:active {
+  cursor: grabbing;
+}
+
+.sidebar-tab-dragging {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.sidebar-tab-name-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.sidebar-pencil-icon {
+  display: inline-flex;
+  color: #94a3b8;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.sidebar-tab-name-wrap:hover .sidebar-pencil-icon {
+  opacity: 1;
 }
 
 .sidebar-chevron {
