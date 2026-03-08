@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   preview: {
     host: '0.0.0.0',
-    port: process.env.PORT || 8080,
-    allowedHosts: 'all'
+    port: 8080,
+    allowedHosts: ['all', 'budget-planner-production.up.railway.app']
   }
 })
