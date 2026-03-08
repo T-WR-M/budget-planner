@@ -622,6 +622,34 @@
   max-height: 28px;
 }
 
+.panel-row-grip,
+.panel-row-grip-spacer {
+  flex-shrink: 0;
+  width: 14px;
+}
+
+.panel-row-grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  cursor: grab;
+  padding: 0;
+  background: none;
+  border: none;
+}
+
+.panel-row-grip:active {
+  cursor: grabbing;
+}
+
+.panel-row-dragging {
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: grabbing;
+  z-index: 1;
+}
+
 .panel-row-header {
   display: flex;
   gap: 4px;
