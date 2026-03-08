@@ -175,7 +175,7 @@
 .panels-section {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 12px;
   margin-top: 1.5rem;
 }
 
@@ -183,7 +183,7 @@
   position: relative;
   background: #ffffff;
   border-radius: 16px;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 12px 0.75rem 1rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   border: 1px solid rgba(0, 0, 0, 0.04);
   overflow: hidden;
@@ -210,25 +210,26 @@
 .panel-rows {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 4px;
 }
 
 .panel-row {
-  display: grid;
-  grid-template-columns: 130px 64px 64px;
-  gap: 6px;
+  display: flex;
+  gap: 8px;
   align-items: center;
 }
 
 .panel-row-header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
   margin-bottom: 0.15rem;
   padding-bottom: 0.2rem;
   border-bottom: 1px solid #e2e8f0;
 }
 
-.panel-row-header .row-label,
-.panel-row-header .row-planned,
-.panel-row-header .row-actual {
+.panel-row-header .row-label {
+  flex: 1;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
@@ -236,9 +237,21 @@
   color: #64748b;
 }
 
+.panel-row-header .row-planned,
+.panel-row-header .row-actual {
+  flex: 0 0 80px;
+  width: 80px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #64748b;
+  text-align: right;
+}
+
 .row-input {
   padding: 0.25rem 0.35rem;
-  font-size: 0.75rem;
+  font-size: 12px;
   font-family: inherit;
   color: #0f172a;
   background: #f8fafc;
@@ -257,11 +270,13 @@
 }
 
 .row-name {
+  flex: 1;
   min-width: 0;
-  max-width: 130px;
 }
 
 .row-amount {
+  flex: 0 0 80px;
+  width: 80px;
   text-align: right;
 }
 
