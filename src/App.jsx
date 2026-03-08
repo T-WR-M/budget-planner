@@ -578,27 +578,6 @@ function App() {
             );
           })}
         </section>
-
-        <section className="summary-bar">
-          <div className="summary-item">
-            <span className="summary-label">Total income</span>
-            <span className="summary-value">{formatCurrency(income || '0')}</span>
-          </div>
-          <div className="summary-item">
-            <span className="summary-label">Total planned</span>
-            <span className="summary-value">{formatCurrency(String(totalPlanned))}</span>
-          </div>
-          <div className="summary-item">
-            <span className="summary-label">Total actual spent</span>
-            <span className="summary-value">{formatCurrency(String(totalActual))}</span>
-          </div>
-          <div className="summary-item">
-            <span className="summary-label">Remaining balance</span>
-            <span className={`summary-value summary-remaining ${remaining >= 0 ? 'summary-remaining-positive' : 'summary-remaining-negative'}`}>
-              {formatCurrency(String(remaining))}
-            </span>
-          </div>
-        </section>
       </main>
     </div>
   );

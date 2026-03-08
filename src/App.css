@@ -435,47 +435,6 @@
   color: #64748b;
 }
 
-/* Summary bar */
-.summary-bar {
-  margin-top: 1.5rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem 1.5rem;
-  padding: 1.25rem 1.5rem;
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(0, 0, 0, 0.04);
-}
-
-.summary-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.summary-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: #64748b;
-}
-
-.summary-value {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.summary-remaining-positive {
-  color: #059669;
-}
-
-.summary-remaining-negative {
-  color: #dc2626;
-}
-
 @media (min-width: 640px) {
   .app {
     padding: 3rem 2rem 4rem;
@@ -483,9 +442,5 @@
 
   .app-title {
     font-size: 2.75rem;
-  }
-
-  .summary-bar {
-    justify-content: space-between;
   }
 }
