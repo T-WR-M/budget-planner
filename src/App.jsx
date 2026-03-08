@@ -33,16 +33,7 @@ const PANELS = [
 
 const CHART_COLORS = { bills: '#2563eb', expenses: '#f97316', debt: '#16a34a', savings: '#7c3aed' };
 
-const PROFESSIONS = [
-  { id: 'nurse', emoji: '👩‍⚕️', label: 'Nurse', monthly: 5200 },
-  { id: 'teacher', emoji: '👨‍🏫', label: 'Teacher', monthly: 3800 },
-  { id: 'software', emoji: '💻', label: 'Software Engineer', monthly: 7500 },
-  { id: 'police', emoji: '🚔', label: 'Police Officer', monthly: 4200 },
-  { id: 'electrician', emoji: '🔧', label: 'Electrician', monthly: 4800 },
-  { id: 'custom', emoji: '✏️', label: 'Custom', monthly: null },
-];
-
-// Profession templates: pre-filled item names and planned amounts (realistic for that salary)
+// Profession templates for default planners: pre-filled item names and planned amounts (realistic for that salary)
 const PROFESSION_TEMPLATES = {
   nurse: {
     income: 5200,
@@ -330,50 +321,103 @@ const initialPanels = () => {
   return panels;
 };
 
-function App() {
-  const [income, setIncome] = useState('');
-  const [selectedProfession, setSelectedProfession] = useState(null);
-  const [panels, setPanels] = useState(initialPanels);
-
-  const handleProfessionClick = useCallback((prof) => {
-    setSelectedProfession(prof.id);
-    if (prof.id === 'custom') {
-      setIncome('');
-      return;
-    }
-    const template = PROFESSION_TEMPLATES[prof.id];
-    if (!template) return;
-    setIncome(String(template.income));
-    setPanels({
+function createPlannerFromTemplate(id, name, template) {
+  return {
+    id,
+    name,
+    income: String(template.income),
+    panels: {
       bills: templateToRows(template.bills),
       expenses: templateToRows(template.expenses),
       debt: templateToRows(template.debt),
       savings: templateToRows(template.savings),
-    });
+    },
+  };
+}
+
+function createEmptyPlanner(id, name, income = '') {
+  return {
+    id,
+    name,
+    income: String(income),
+    panels: initialPanels(),
+  };
+}
+
+function getDefaultPlanners() {
+  const ids = ['nurse', 'teacher', 'software', 'police'];
+  const names = ['Nurse', 'Teacher', 'Software Engineer', 'Police Officer'];
+  return ids.map((id, i) => createPlannerFromTemplate(`planner-${id}`, names[i], PROFESSION_TEMPLATES[id]));
+}
+
+function App() {
+  const [planners, setPlanners] = useState(getDefaultPlanners);
+  const [activePlannerId, setActivePlannerId] = useState(() => getDefaultPlanners()[0].id);
+
+  const activePlanner = planners.find((p) => p.id === activePlannerId) ?? planners[0];
+  const income = activePlanner?.income ?? '';
+  const panels = activePlanner?.panels ?? initialPanels();
+
+  const handleIncomeChange = useCallback(
+    (e) => {
+      const value = e.target.value;
+      setPlanners((prev) =>
+        prev.map((p) => (p.id === activePlannerId ? { ...p, income: value } : p))
+      );
+    },
+    [activePlannerId]
+  );
+
+  const updateRow = useCallback(
+    (panelKey, rowId, field, value) => {
+      setPlanners((prev) => {
+        const active = prev.find((p) => p.id === activePlannerId);
+        if (!active) return prev;
+        const newPanels = {
+          ...active.panels,
+          [panelKey]: active.panels[panelKey].map((row) =>
+            row.id === rowId ? { ...row, [field]: value } : row
+          ),
+        };
+        return prev.map((p) => (p.id === activePlannerId ? { ...p, panels: newPanels } : p));
+      });
+    },
+    [activePlannerId]
+  );
+
+  const addRow = useCallback(
+    (panelKey) => {
+      setPlanners((prev) => {
+        const active = prev.find((p) => p.id === activePlannerId);
+        if (!active) return prev;
+        const newPanels = {
+          ...active.panels,
+          [panelKey]: [...active.panels[panelKey], createRow(`row-${Date.now()}`, '', '', '')],
+        };
+        return prev.map((p) => (p.id === activePlannerId ? { ...p, panels: newPanels } : p));
+      });
+    },
+    [activePlannerId]
+  );
+
+  const handleSelectPlanner = useCallback((id) => setActivePlannerId(id), []);
+
+  const handleNewPlanner = useCallback(() => {
+    const name = window.prompt('Planner name (e.g. profession or "My Budget")?', 'My Budget');
+    if (name == null || name.trim() === '') return;
+    const incomeStr = window.prompt('Monthly income?', '0');
+    const incomeVal = incomeStr != null ? incomeStr.trim() : '0';
+    const id = `planner-${Date.now()}`;
+    setPlanners((prev) => [...prev, createEmptyPlanner(id, name.trim(), incomeVal)]);
+    setActivePlannerId(id);
   }, []);
 
-  const handleIncomeChange = useCallback((e) => {
-    setIncome(e.target.value);
-    setSelectedProfession('custom');
-  }, []);
-
-  const updateRow = useCallback((panelKey, rowId, field, value) => {
-    setPanels((prev) => ({
-      ...prev,
-      [panelKey]: prev[panelKey].map((row) =>
-        row.id === rowId ? { ...row, [field]: value } : row
-      ),
-    }));
-  }, []);
-
-  const addRow = useCallback((panelKey) => {
-    const config = PANELS.find((p) => p.key === panelKey);
-    const placeholder = config?.placeholders[0] || '';
-    setPanels((prev) => ({
-      ...prev,
-      [panelKey]: [...prev[panelKey], createRow(`row-${Date.now()}`, '', '', '')],
-    }));
-  }, []);
+  const handleDeletePlanner = useCallback((e, id) => {
+    e.stopPropagation();
+    if (planners.length <= 1) return;
+    setPlanners((prev) => prev.filter((p) => p.id !== id));
+    setActivePlannerId((current) => (current === id ? planners.find((p) => p.id !== id)?.id ?? current : current));
+  }, [planners]);
 
   const numIncome = parseFloat(income) || 0;
 
@@ -430,35 +474,57 @@ function App() {
 
   return (
     <div className="app">
-      <header className="header">
-        <h1 className="app-title">BudgetFlow</h1>
-        <p className="app-tagline">Your monthly budget tracker</p>
-      </header>
-
-      <main className="main">
-        <section className="income-section">
-          <p className="profession-label">Choose a profession to pre-fill your budget</p>
-          <div className="profession-row">
-            {PROFESSIONS.map((prof) => (
+      <aside className="sidebar">
+        <h2 className="sidebar-title">My Planners</h2>
+        <ul className="sidebar-tabs">
+          {planners.map((planner) => (
+            <li
+              key={planner.id}
+              className={`sidebar-tab ${planner.id === activePlannerId ? 'sidebar-tab-active' : ''}`}
+              onClick={() => handleSelectPlanner(planner.id)}
+            >
+              <span className="sidebar-tab-dot" style={{ backgroundColor: planner.id === activePlannerId ? '#3b82f6' : '#64748b' }} />
+              <div className="sidebar-tab-content">
+                <span className="sidebar-tab-name">{planner.name}</span>
+                <span className="sidebar-tab-income">
+                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(parseFloat(planner.income) || 0)}/mo
+                </span>
+              </div>
+              {planners.length > 1 && (
               <button
-                key={prof.id}
                 type="button"
-                className={`profession-btn ${selectedProfession === prof.id ? 'profession-btn-selected' : ''} profession-btn-${prof.id === 'custom' ? 'custom' : prof.id}`}
-                onClick={() => handleProfessionClick(prof)}
+                className="sidebar-tab-delete"
+                onClick={(e) => handleDeletePlanner(e, planner.id)}
+                title="Delete planner"
+                aria-label="Delete planner"
               >
-                <span className="profession-emoji">{prof.emoji}</span>
-                <span className="profession-name">{prof.label}</span>
-                {prof.monthly !== null && (
-                  <span className="profession-amount">
-                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(prof.monthly)}/mo
-                  </span>
-                )}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  <line x1="10" y1="11" x2="10" y2="17" />
+                  <line x1="14" y1="11" x2="14" y2="17" />
+                </svg>
               </button>
-            ))}
-          </div>
-          <label htmlFor="income" className="income-label">
-            Monthly income
-          </label>
+              )}
+            </li>
+          ))}
+        </ul>
+        <button type="button" className="sidebar-new-btn" onClick={handleNewPlanner}>
+          + New Planner
+        </button>
+      </aside>
+
+      <div className="app-main">
+        <header className="header">
+          <h1 className="app-title">BudgetFlow</h1>
+          <p className="app-tagline">Your monthly budget tracker</p>
+        </header>
+
+        <main className="main">
+          <section className="income-section">
+            <label htmlFor="income" className="income-label">
+              Monthly income
+            </label>
           <input
             id="income"
             type="number"
@@ -578,7 +644,8 @@ function App() {
             );
           })}
         </section>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
