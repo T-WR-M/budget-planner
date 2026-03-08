@@ -31,6 +31,26 @@
   overflow-y: auto;
 }
 
+.sidebar-planner-wrap {
+  list-style: none;
+  margin: 0 0 0.25rem 0;
+}
+
+.sidebar-chevron {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  border-right: 2px solid #94a3b8;
+  border-bottom: 2px solid #94a3b8;
+  transform: rotate(-45deg);
+  transition: transform 0.2s;
+  margin-right: 0.15rem;
+}
+
+.sidebar-chevron-open {
+  transform: rotate(45deg);
+}
+
 .sidebar-tab {
   display: flex;
   align-items: center;
@@ -107,6 +127,47 @@
 
 .sidebar-tab-active .sidebar-tab-delete:hover {
   color: #dc2626;
+}
+
+.sidebar-month-tabs {
+  list-style: none;
+  margin: 0 0 0.5rem 0;
+  padding: 0 0 0 1.5rem;
+}
+
+.sidebar-month-tabs li {
+  margin: 0;
+}
+
+.sidebar-month-tab {
+  display: block;
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  font-size: 11px;
+  font-family: inherit;
+  text-align: left;
+  color: #94a3b8;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.sidebar-month-tab:hover {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-month-tab-active {
+  color: #3b82f6;
+  font-weight: 600;
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.sidebar-month-tab-annual {
+  font-weight: 700;
+  margin-bottom: 0.2rem;
 }
 
 .sidebar-new-btn {
@@ -302,6 +363,12 @@
   margin: 0;
 }
 
+.header-context {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
 .save-btn {
   display: inline-flex;
   align-items: center;
@@ -392,6 +459,22 @@
   font-weight: 600;
   color: #334155;
   margin-bottom: 0.5rem;
+}
+
+.income-planner-name {
+  color: #3b82f6;
+  font-weight: 500;
+}
+
+.annual-placeholder {
+  padding: 2rem;
+  text-align: center;
+}
+
+.annual-placeholder-text {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: #64748b;
 }
 
 .income-input {

@@ -35,6 +35,10 @@ const CHART_COLORS = { bills: '#2563eb', expenses: '#f97316', debt: '#16a34a', s
 const REMAINING_COLOR = '#14b8a6';
 const OVER_BUDGET_COLOR = '#ef4444';
 
+const MONTH_KEYS = ['annual', 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+const MONTH_LABELS = { annual: '📊 Annual Overview', jan: 'Jan', feb: 'Feb', mar: 'Mar', apr: 'Apr', may: 'May', jun: 'Jun', jul: 'Jul', aug: 'Aug', sep: 'Sep', oct: 'Oct', nov: 'Nov', dec: 'Dec' };
+const STORAGE_KEY = 'budgetflow-planners';
+
 // Profession templates for default planners: pre-filled item names and planned amounts (realistic for that salary)
 const PROFESSION_TEMPLATES = {
   nurse: {
@@ -324,17 +328,36 @@ const initialPanels = () => {
   return panels;
 };
 
+function buildMonthsWithJanTemplate(template) {
+  const months = {};
+  const janPanels = {
+    bills: templateToRows(template?.bills),
+    expenses: templateToRows(template?.expenses),
+    debt: templateToRows(template?.debt),
+    savings: templateToRows(template?.savings),
+  };
+  months.jan = { panels: janPanels };
+  ['feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].forEach((m) => {
+    months[m] = { panels: initialPanels() };
+  });
+  months.annual = { panels: initialPanels() };
+  return months;
+}
+
+function buildMonthsEmpty() {
+  const months = {};
+  MONTH_KEYS.forEach((m) => {
+    months[m] = { panels: initialPanels() };
+  });
+  return months;
+}
+
 function createPlannerFromTemplate(id, name, template) {
   return {
     id,
     name,
     income: String(template.income),
-    panels: {
-      bills: templateToRows(template.bills),
-      expenses: templateToRows(template.expenses),
-      debt: templateToRows(template.debt),
-      savings: templateToRows(template.savings),
-    },
+    months: buildMonthsWithJanTemplate(template),
   };
 }
 
@@ -343,7 +366,7 @@ function createEmptyPlanner(id, name, income = '') {
     id,
     name,
     income: String(income),
-    panels: initialPanels(),
+    months: buildMonthsEmpty(),
   };
 }
 
@@ -353,9 +376,40 @@ function getDefaultPlanners() {
   return ids.map((id, i) => createPlannerFromTemplate(`planner-${id}`, names[i], PROFESSION_TEMPLATES[id]));
 }
 
+function loadPlannersFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed) || parsed.length === 0) return null;
+    return parsed.map((p) => {
+      if (p.months) return p;
+      const months = buildMonthsEmpty();
+      months.jan = { panels: p.panels || initialPanels() };
+      return { ...p, months };
+    });
+  } catch {
+    return null;
+  }
+}
+
+function getCurrentMonthKey() {
+  const m = new Date().getMonth();
+  return MONTH_KEYS[m + 1];
+}
+
 function App() {
-  const [planners, setPlanners] = useState(getDefaultPlanners);
-  const [activePlannerId, setActivePlannerId] = useState(() => getDefaultPlanners()[0].id);
+  const [planners, setPlanners] = useState(() => loadPlannersFromStorage() ?? getDefaultPlanners());
+  const [activePlannerId, setActivePlannerId] = useState(() => {
+    const loaded = loadPlannersFromStorage();
+    return (loaded && loaded[0]?.id) ?? getDefaultPlanners()[0].id;
+  });
+  const [activeMonthKey, setActiveMonthKey] = useState(() => getCurrentMonthKey());
+  const [expandedPlannerIds, setExpandedPlannerIds] = useState(() => {
+    const loaded = loadPlannersFromStorage();
+    const id = (loaded && loaded[0]?.id) ?? getDefaultPlanners()[0].id;
+    return [id];
+  });
   const [unsavedPlannerIds, setUnsavedPlannerIds] = useState([]);
   const [showNewPlannerForm, setShowNewPlannerForm] = useState(false);
   const [newPlannerName, setNewPlannerName] = useState('');
@@ -365,10 +419,29 @@ function App() {
   const [plannerToDelete, setPlannerToDelete] = useState(null);
   const [saveMessage, setSaveMessage] = useState(null);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(planners));
+    } catch (_) {}
+  }, [planners]);
+
   const activePlanner = planners.find((p) => p.id === activePlannerId) ?? planners[0];
+  const activeMonthData = activePlanner?.months?.[activeMonthKey];
+  const panels = activeMonthData?.panels ?? initialPanels();
   const income = activePlanner?.income ?? '';
-  const panels = activePlanner?.panels ?? initialPanels();
   const isActiveUnsaved = unsavedPlannerIds.includes(activePlannerId);
+
+  const togglePlannerExpanded = useCallback((e, id) => {
+    e.stopPropagation();
+    setExpandedPlannerIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }, []);
+
+  const handleSelectMonth = useCallback((e, plannerId, monthKey) => {
+    if (e) e.stopPropagation();
+    setActivePlannerId(plannerId);
+    setActiveMonthKey(monthKey);
+    setEditingPlannerId(null);
+  }, []);
 
   const markActiveUnsaved = useCallback(() => {
     setUnsavedPlannerIds((prev) => (prev.includes(activePlannerId) ? prev : [...prev, activePlannerId]));
@@ -389,39 +462,50 @@ function App() {
     (panelKey, rowId, field, value) => {
       setPlanners((prev) => {
         const active = prev.find((p) => p.id === activePlannerId);
-        if (!active) return prev;
+        if (!active?.months?.[activeMonthKey]) return prev;
+        const currentPanels = active.months[activeMonthKey].panels;
         const newPanels = {
-          ...active.panels,
-          [panelKey]: active.panels[panelKey].map((row) =>
+          ...currentPanels,
+          [panelKey]: currentPanels[panelKey].map((row) =>
             row.id === rowId ? { ...row, [field]: value } : row
           ),
         };
-        return prev.map((p) => (p.id === activePlannerId ? { ...p, panels: newPanels } : p));
+        return prev.map((p) =>
+          p.id === activePlannerId
+            ? { ...p, months: { ...p.months, [activeMonthKey]: { panels: newPanels } } }
+            : p
+        );
       });
       markActiveUnsaved();
     },
-    [activePlannerId, markActiveUnsaved]
+    [activePlannerId, activeMonthKey, markActiveUnsaved]
   );
 
   const addRow = useCallback(
     (panelKey) => {
       setPlanners((prev) => {
         const active = prev.find((p) => p.id === activePlannerId);
-        if (!active) return prev;
+        if (!active?.months?.[activeMonthKey]) return prev;
+        const currentPanels = active.months[activeMonthKey].panels;
         const newPanels = {
-          ...active.panels,
-          [panelKey]: [...active.panels[panelKey], createRow(`row-${Date.now()}`, '', '', '')],
+          ...currentPanels,
+          [panelKey]: [...currentPanels[panelKey], createRow(`row-${Date.now()}`, '', '', '')],
         };
-        return prev.map((p) => (p.id === activePlannerId ? { ...p, panels: newPanels } : p));
+        return prev.map((p) =>
+          p.id === activePlannerId
+            ? { ...p, months: { ...p.months, [activeMonthKey]: { panels: newPanels } } }
+            : p
+        );
       });
       markActiveUnsaved();
     },
-    [activePlannerId, markActiveUnsaved]
+    [activePlannerId, activeMonthKey, markActiveUnsaved]
   );
 
   const handleSelectPlanner = useCallback((id) => {
     setActivePlannerId(id);
     setEditingPlannerId(null);
+    setExpandedPlannerIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
   }, []);
 
   const handleSave = useCallback(() => {
@@ -458,6 +542,8 @@ function App() {
     const id = `planner-${Date.now()}`;
     setPlanners((prev) => [...prev, createEmptyPlanner(id, name, incomeVal)]);
     setActivePlannerId(id);
+    setActiveMonthKey(getCurrentMonthKey());
+    setExpandedPlannerIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
     setShowNewPlannerForm(false);
     setNewPlannerName('');
     setNewPlannerIncome('');
@@ -590,62 +676,88 @@ function App() {
       <aside className="sidebar">
         <h2 className="sidebar-title">My Planners</h2>
         <ul className="sidebar-tabs">
-          {planners.map((planner) => (
-            <li
-              key={planner.id}
-              className={`sidebar-tab ${planner.id === activePlannerId ? 'sidebar-tab-active' : ''}`}
-              onClick={() => handleSelectPlanner(planner.id)}
-            >
-              <span className="sidebar-tab-dot" style={{ backgroundColor: planner.id === activePlannerId ? '#3b82f6' : '#64748b' }} />
-              <div className="sidebar-tab-content">
-                {editingPlannerId === planner.id ? (
-                  <input
-                    type="text"
-                    className="sidebar-tab-rename-input"
-                    value={editingPlannerName}
-                    onChange={(e) => setEditingPlannerName(e.target.value)}
-                    onBlur={() => handleRenameSubmit(planner.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleRenameSubmit(planner.id);
-                      if (e.key === 'Escape') setEditingPlannerId(null);
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    autoFocus
-                  />
-                ) : (
-                  <>
-                    <span
-                      className="sidebar-tab-name"
-                      onDoubleClick={(e) => handleRenameStart(e, planner)}
-                      title="Double-click to rename"
-                    >
-                      {planner.name}
-                      {unsavedPlannerIds.includes(planner.id) && <span className="sidebar-tab-unsaved" title="Unsaved changes"> •</span>}
-                    </span>
-                    <span className="sidebar-tab-income">
-                      {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(parseFloat(planner.income) || 0)}/mo
-                    </span>
-                  </>
-                )}
-              </div>
-              {planners.length > 1 && editingPlannerId !== planner.id && (
-                <button
-                  type="button"
-                  className="sidebar-tab-delete"
-                  onClick={(e) => handleDeleteClick(e, planner.id)}
-                  title="Delete planner"
-                  aria-label="Delete planner"
+          {planners.map((planner) => {
+            const isExpanded = expandedPlannerIds.includes(planner.id);
+            return (
+              <li key={planner.id} className="sidebar-planner-wrap">
+                <div
+                  className={`sidebar-tab ${planner.id === activePlannerId ? 'sidebar-tab-active' : ''}`}
+                  onClick={(e) => {
+                    if (editingPlannerId === planner.id) return;
+                    const target = e.target;
+                    if (target.closest('.sidebar-tab-delete')) return;
+                    if (target.closest('.sidebar-tab-rename-input')) return;
+                    togglePlannerExpanded(e, planner.id);
+                  }}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 6 5 6 21 6" />
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    <line x1="10" y1="11" x2="10" y2="17" />
-                    <line x1="14" y1="11" x2="14" y2="17" />
-                  </svg>
-                </button>
-              )}
-            </li>
-          ))}
+                  <span className={`sidebar-chevron ${isExpanded ? 'sidebar-chevron-open' : ''}`} />
+                  <span className="sidebar-tab-dot" style={{ backgroundColor: planner.id === activePlannerId ? '#3b82f6' : '#64748b' }} />
+                  <div className="sidebar-tab-content">
+                    {editingPlannerId === planner.id ? (
+                      <input
+                        type="text"
+                        className="sidebar-tab-rename-input"
+                        value={editingPlannerName}
+                        onChange={(e) => setEditingPlannerName(e.target.value)}
+                        onBlur={() => handleRenameSubmit(planner.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleRenameSubmit(planner.id);
+                          if (e.key === 'Escape') setEditingPlannerId(null);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        autoFocus
+                      />
+                    ) : (
+                      <>
+                        <span
+                          className="sidebar-tab-name"
+                          onDoubleClick={(e) => handleRenameStart(e, planner)}
+                          title="Double-click to rename"
+                        >
+                          {planner.name}
+                          {unsavedPlannerIds.includes(planner.id) && <span className="sidebar-tab-unsaved" title="Unsaved changes"> •</span>}
+                        </span>
+                        <span className="sidebar-tab-income">
+                          {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(parseFloat(planner.income) || 0)}/mo
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  {planners.length > 1 && editingPlannerId !== planner.id && (
+                    <button
+                      type="button"
+                      className="sidebar-tab-delete"
+                      onClick={(e) => handleDeleteClick(e, planner.id)}
+                      title="Delete planner"
+                      aria-label="Delete planner"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        <line x1="10" y1="11" x2="10" y2="17" />
+                        <line x1="14" y1="11" x2="14" y2="17" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                {isExpanded && (
+                  <ul className="sidebar-month-tabs">
+                    {MONTH_KEYS.map((monthKey) => (
+                      <li key={monthKey}>
+                        <button
+                          type="button"
+                          className={`sidebar-month-tab ${planner.id === activePlannerId && activeMonthKey === monthKey ? 'sidebar-month-tab-active' : ''} ${monthKey === 'annual' ? 'sidebar-month-tab-annual' : ''}`}
+                          onClick={(e) => handleSelectMonth(e, planner.id, monthKey)}
+                        >
+                          {MONTH_LABELS[monthKey]}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            );
+          })}
         </ul>
         {showNewPlannerForm ? (
           <div className="sidebar-new-form">
@@ -695,6 +807,9 @@ function App() {
         <header className="header">
           <div className="header-top">
             <h1 className="app-title">BudgetFlow</h1>
+            <span className="header-context">
+              {activePlanner?.name} — {MONTH_LABELS[activeMonthKey]}
+            </span>
             <button
               type="button"
               className="save-btn"
@@ -722,7 +837,7 @@ function App() {
         <main className="main">
           <section className="income-section">
             <label htmlFor="income" className="income-label">
-              Monthly income
+              Monthly income <span className="income-planner-name">— {activePlanner?.name}</span>
             </label>
           <input
             id="income"
@@ -740,6 +855,12 @@ function App() {
           </p>
         </section>
 
+        {activeMonthKey === 'annual' ? (
+          <section className="annual-placeholder">
+            <p className="annual-placeholder-text">Annual overview — coming soon</p>
+          </section>
+        ) : (
+          <>
         <section className="chart-section">
           <div className="chart-card">
             <div className="chart-wrapper">
@@ -847,6 +968,8 @@ function App() {
             );
           })}
         </section>
+          </>
+        )}
         </main>
       </div>
     </div>
