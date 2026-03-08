@@ -711,6 +711,15 @@
   color: #64748b;
 }
 
+.chart-stat-warning {
+  color: #ef4444;
+  font-size: 12px;
+}
+
+.chart-stat-overbudget .chart-stat-amount {
+  color: #ef4444;
+}
+
 @media (min-width: 640px) {
   .app-title {
     font-size: 2rem;

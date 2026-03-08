@@ -32,6 +32,8 @@ const PANELS = [
 ];
 
 const CHART_COLORS = { bills: '#2563eb', expenses: '#f97316', debt: '#16a34a', savings: '#7c3aed' };
+const REMAINING_COLOR = '#14b8a6';
+const OVER_BUDGET_COLOR = '#ef4444';
 
 // Profession templates for default planners: pre-filled item names and planned amounts (realistic for that salary)
 const PROFESSION_TEMPLATES = {
@@ -531,28 +533,57 @@ function App() {
   };
 
   const chartData =
-    totalActual > 0
-      ? PANEL_KEYS.filter((key) => panelTotals[key].actual > 0).map((key) => ({
-          name: PANELS.find((p) => p.key === key).title,
-          value: panelTotals[key].actual,
-          color: CHART_COLORS[key],
-        }))
-      : [
+    numIncome === 0
+      ? [
           { name: 'Bills', value: 1, color: '#94a3b8' },
           { name: 'Expenses', value: 1, color: '#cbd5e1' },
           { name: 'Debt', value: 1, color: '#e2e8f0' },
           { name: 'Savings', value: 1, color: '#f1f5f9' },
-        ];
+        ]
+      : numIncome > 0 && totalActual === 0
+        ? [{ name: 'Remaining', value: numIncome, color: REMAINING_COLOR }]
+        : remaining >= 0
+          ? [
+              ...PANEL_KEYS.map((key) => ({
+                name: PANELS.find((p) => p.key === key).title,
+                value: panelTotals[key].actual,
+                color: CHART_COLORS[key],
+              })),
+              { name: 'Remaining', value: remaining, color: REMAINING_COLOR },
+            ]
+          : (() => {
+              const scale = (2 * numIncome - totalActual) / totalActual;
+              return [
+                ...PANEL_KEYS.map((key) => ({
+                  name: PANELS.find((p) => p.key === key).title,
+                  value: panelTotals[key].actual * scale,
+                  color: CHART_COLORS[key],
+                })),
+                { name: 'Over Budget', value: totalActual - numIncome, color: OVER_BUDGET_COLOR },
+              ];
+            })();
 
   const chartLegendItems =
-    totalActual > 0
-      ? PANEL_KEYS.map((key) => ({
-          name: PANELS.find((p) => p.key === key).title,
-          actual: panelTotals[key].actual,
-          color: CHART_COLORS[key],
-          pct: numIncome > 0 ? (panelTotals[key].actual / numIncome) * 100 : 0,
-        }))
-      : [];
+    numIncome === 0
+      ? [
+          ...PANELS.map((p) => ({ name: p.title, actual: 0, color: CHART_COLORS[p.key], pct: 0 })),
+          { name: 'Remaining', actual: 0, color: REMAINING_COLOR, pct: 0, isOverBudget: false },
+        ]
+      : [
+          ...PANEL_KEYS.map((key) => ({
+            name: PANELS.find((p) => p.key === key).title,
+            actual: panelTotals[key].actual,
+            color: CHART_COLORS[key],
+            pct: numIncome > 0 ? (panelTotals[key].actual / numIncome) * 100 : 0,
+          })),
+          {
+            name: remaining >= 0 ? 'Remaining' : 'Over Budget',
+            actual: remaining,
+            color: remaining >= 0 ? REMAINING_COLOR : OVER_BUDGET_COLOR,
+            pct: numIncome > 0 ? (Math.abs(remaining) / numIncome) * 100 : 0,
+            isOverBudget: remaining < 0,
+          },
+        ];
 
   return (
     <div className="app">
@@ -731,17 +762,22 @@ function App() {
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
-              <div className={`chart-center-label ${totalActual === 0 ? 'chart-center-label-placeholder' : ''}`}>
-                {totalActual > 0 ? formatCurrency(String(totalActual)) : '$0'}
+              <div className={`chart-center-label ${numIncome === 0 ? 'chart-center-label-placeholder' : ''}`}>
+                {numIncome > 0 ? formatCurrency(String(totalActual)) : '$0'}
               </div>
             </div>
             <div className="chart-stats">
-              {(totalActual > 0 ? chartLegendItems : PANELS.map((p) => ({ name: p.title, actual: 0, color: CHART_COLORS[p.key], pct: 0 }))).map((item) => (
-                <div key={item.name} className="chart-stat-block">
+              {chartLegendItems.map((item) => (
+                <div key={item.name} className={`chart-stat-block ${item.isOverBudget ? 'chart-stat-overbudget' : ''}`}>
                   <span className="chart-stat-dot" style={{ backgroundColor: item.color }} />
                   <div className="chart-stat-content">
-                    <span className="chart-stat-name">{item.name}</span>
-                    <span className="chart-stat-amount">{formatCurrency(item.actual)}</span>
+                    <span className="chart-stat-name">
+                      {item.name}
+                      {item.isOverBudget && <span className="chart-stat-warning" title="Over budget"> ⚠</span>}
+                    </span>
+                    <span className="chart-stat-amount">
+                      {item.actual < 0 ? `-${formatCurrency(String(Math.abs(item.actual)))}` : formatCurrency(item.actual)}
+                    </span>
                     <span className="chart-stat-pct">{item.pct.toFixed(1)}%</span>
                   </div>
                 </div>
