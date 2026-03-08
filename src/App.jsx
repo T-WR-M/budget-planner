@@ -712,7 +712,7 @@ function App() {
         <section className="chart-section">
           <div className="chart-card">
             <div className="chart-wrapper">
-              <ResponsiveContainer width="100%" height={260}>
+              <ResponsiveContainer width="100%" height={160}>
                 <PieChart>
                   <Pie
                     data={chartData}
@@ -734,7 +734,6 @@ function App() {
               <div className={`chart-center-label ${totalActual === 0 ? 'chart-center-label-placeholder' : ''}`}>
                 {totalActual > 0 ? formatCurrency(String(totalActual)) : '$0'}
               </div>
-              {totalActual > 0 && <div className="chart-center-sublabel">Total spent</div>}
             </div>
             <div className="chart-stats">
               {(totalActual > 0 ? chartLegendItems : PANELS.map((p) => ({ name: p.title, actual: 0, color: CHART_COLORS[p.key], pct: 0 }))).map((item) => (
@@ -743,7 +742,7 @@ function App() {
                   <div className="chart-stat-content">
                     <span className="chart-stat-name">{item.name}</span>
                     <span className="chart-stat-amount">{formatCurrency(item.actual)}</span>
-                    <span className="chart-stat-pct">{item.pct.toFixed(1)}% of income</span>
+                    <span className="chart-stat-pct">{item.pct.toFixed(1)}%</span>
                   </div>
                 </div>
               ))}
