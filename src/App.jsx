@@ -519,20 +519,31 @@ function App() {
   const handlePanelDragEnd = useCallback((panelKey, event) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
+
     setPlanners((prev) => {
       const activePlanner = prev.find((p) => p.id === activePlannerId);
       if (!activePlanner?.months?.[activeMonthKey]) return prev;
-      const currentRows = activePlanner.months[activeMonthKey].panels[panelKey] || [];
-      const oldIndex = currentRows.findIndex((r) => r.id === active.id);
-      const newIndex = currentRows.findIndex((r) => r.id === over.id);
+
+      const items = activePlanner.months[activeMonthKey].panels[panelKey] || [];
+      const activeId = String(active.id);
+      const overId = String(over.id);
+      const oldIndex = items.findIndex((item) => String(item.id) === activeId);
+      const newIndex = items.findIndex((item) => String(item.id) === overId);
       if (oldIndex === -1 || newIndex === -1) return prev;
-      const newRows = arrayMove(currentRows, oldIndex, newIndex);
+
+      const newRows = arrayMove(items, oldIndex, newIndex);
       const newPanels = { ...activePlanner.months[activeMonthKey].panels, [panelKey]: newRows };
-      return prev.map((p) =>
+      const nextPlanners = prev.map((p) =>
         p.id === activePlannerId
           ? { ...p, months: { ...p.months, [activeMonthKey]: { panels: newPanels } } }
           : p
       );
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(nextPlanners));
+      } catch (_) {}
+
+      return nextPlanners;
     });
     markActiveUnsaved();
   }, [activePlannerId, activeMonthKey, markActiveUnsaved]);
@@ -851,7 +862,7 @@ function App() {
     );
   }
 
-  function SortablePanelRow({ row, panelKey, panel, index }) {
+  function SortablePanelRow({ id, row, panelKey, panel, index }) {
     const {
       attributes,
       listeners,
@@ -859,7 +870,7 @@ function App() {
       transform,
       transition,
       isDragging,
-    } = useSortable({ id: row.id });
+    } = useSortable({ id });
 
     const style = {
       transform: CSS.Transform.toString(transform),
@@ -1121,6 +1132,7 @@ function App() {
                       {rows.map((row, idx) => (
                         <SortablePanelRow
                           key={row.id}
+                          id={row.id}
                           row={row}
                           panelKey={panel.key}
                           panel={panel}
