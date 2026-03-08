@@ -280,21 +280,40 @@
   text-align: right;
 }
 
-.panel-totals {
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 2px solid transparent;
+/* Totals at top of panel — dashboard stat style */
+.panel-totals.panel-totals-top {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #334155;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-.panel-total-pct {
-  color: #64748b;
+.panel-totals-main {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.panel-total-actual {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.panel-total-planned {
+  font-size: 14px;
   font-weight: 500;
+  color: #64748b;
+}
+
+.panel-total-pct-large {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
 }
 
 .add-row-btn {

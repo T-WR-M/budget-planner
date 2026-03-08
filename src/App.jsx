@@ -484,6 +484,13 @@ function App() {
               <div key={panel.key} className="budget-panel card" data-panel={panel.key}>
                 <div className="panel-accent" style={{ background: panel.accent }} />
                 <h2 className="panel-title" style={{ borderBottomColor: panel.accent }}>{panel.title}</h2>
+                <div className="panel-totals panel-totals-top">
+                  <div className="panel-totals-main">
+                    <span className="panel-total-actual" style={{ color: panel.accent }}>{formatCurrency(totals.actual)}</span>
+                    <span className="panel-total-planned">Planned {formatCurrency(totals.planned)}</span>
+                  </div>
+                  <span className="panel-total-pct-large">{pctIncome.toFixed(1)}%</span>
+                </div>
                 <div className="panel-rows">
                   <div className="panel-row panel-row-header">
                     <span className="row-label">Item</span>
@@ -521,11 +528,6 @@ function App() {
                       />
                     </div>
                   ))}
-                </div>
-                <div className="panel-totals" style={{ borderTopColor: panel.accent }}>
-                  <span className="panel-total-line">Planned: {formatCurrency(totals.planned)}</span>
-                  <span className="panel-total-line">Actual: {formatCurrency(totals.actual)}</span>
-                  <span className="panel-total-line panel-total-pct">{pctIncome.toFixed(1)}% of income</span>
                 </div>
                 <button type="button" className="add-row-btn" onClick={() => addRow(panel.key)} style={{ borderColor: panel.accent, color: panel.accent }}>
                   + Add row
