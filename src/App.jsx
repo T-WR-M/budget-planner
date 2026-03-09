@@ -463,6 +463,21 @@ function App() {
   const [expandedAnnualLineItems, setExpandedAnnualLineItems] = useState({});
   const [isPremium, setIsPremium] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    try {
+      const saved = localStorage.getItem('budgetflow-theme');
+      return saved !== 'light';
+    } catch {
+      return true;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+      localStorage.setItem('budgetflow-theme', isDarkMode ? 'dark' : 'light');
+    } catch (_) {}
+  }, [isDarkMode]);
 
   useEffect(() => {
     try {
@@ -919,7 +934,7 @@ function App() {
             </svg>
           </span>
           <span className={`sidebar-chevron ${isExpanded ? 'sidebar-chevron-open' : ''}`} />
-          <span className="sidebar-tab-dot" style={{ backgroundColor: planner.id === activePlannerId ? '#3b82f6' : '#64748b' }} />
+          <span className="sidebar-tab-dot" />
           <div className="sidebar-tab-content">
             {editingPlannerId === planner.id ? (
               <input
@@ -1164,24 +1179,41 @@ function App() {
       <div className="app-main">
         <header className="header">
           <div className="header-top">
-            <h1 className="app-title">BudgetFlow</h1>
-            <span className="header-context">
-              {activePlanner?.name} — {MONTH_LABELS[activeMonthKey]}
-            </span>
-            <button
-              type="button"
-              className="save-btn"
-              onClick={handleSave}
-              title="Save current planner"
-              disabled={!isActiveUnsaved}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                <polyline points="17 21 17 13 7 13 7 21" />
-                <polyline points="7 3 7 8 15 8" />
-              </svg>
-              Save
-            </button>
+            <div className="header-center">
+              <h1 className="app-title">BudgetFlow</h1>
+              <span className="header-context">
+                {activePlanner?.name} — {MONTH_LABELS[activeMonthKey]}
+              </span>
+            </div>
+            <div className="header-actions">
+              <button
+                type="button"
+                className="save-btn"
+                onClick={handleSave}
+                title="Save current planner"
+                disabled={!isActiveUnsaved}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                  <polyline points="17 21 17 13 7 13 7 21" />
+                  <polyline points="7 3 7 8 15 8" />
+                </svg>
+                Save
+              </button>
+              <button
+                type="button"
+                className="theme-toggle-btn"
+                onClick={() => setIsDarkMode((prev) => !prev)}
+                title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {isDarkMode ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" /></svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+                )}
+              </button>
+            </div>
           </div>
           <p className="app-tagline">Your monthly budget tracker</p>
         </header>
