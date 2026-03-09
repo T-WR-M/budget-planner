@@ -21,6 +21,28 @@
   margin: 0 1rem 1rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.sidebar-premium-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.15);
+  padding: 0.2rem 0.45rem;
+  border-radius: 6px;
+}
+
+.sidebar-new-btn-locked {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.sidebar-month-tab-locked {
+  opacity: 0.85;
 }
 
 .sidebar-tabs {
@@ -366,6 +388,113 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
   cursor: pointer;
+}
+
+/* Upgrade modal */
+.upgrade-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.upgrade-modal {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 2rem 2.25rem;
+  max-width: 380px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  text-align: center;
+}
+
+.upgrade-modal-logo {
+  margin: 0 0 1.25rem;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.upgrade-modal-headline {
+  margin: 0 0 0.35rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.upgrade-modal-subheadline {
+  margin: 0 0 1.25rem;
+  font-size: 0.9375rem;
+  color: #64748b;
+}
+
+.upgrade-modal-price {
+  margin: 0 0 1.5rem;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.03em;
+}
+
+.upgrade-modal-features {
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  text-align: left;
+}
+
+.upgrade-modal-features li {
+  padding: 0.4rem 0;
+  font-size: 0.9375rem;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.upgrade-modal-check {
+  flex-shrink: 0;
+}
+
+.upgrade-modal-cta {
+  display: block;
+  width: 100%;
+  padding: 0.9rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: inherit;
+  color: #fff;
+  background: #059669;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.upgrade-modal-cta:hover {
+  background: #047857;
+}
+
+.upgrade-modal-later {
+  display: block;
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  color: #64748b;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.upgrade-modal-later:hover {
+  color: #475569;
 }
 
 .sidebar-delete-no:hover {

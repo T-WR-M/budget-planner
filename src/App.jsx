@@ -461,6 +461,8 @@ function App() {
   const [plannerToDelete, setPlannerToDelete] = useState(null);
   const [saveMessage, setSaveMessage] = useState(null);
   const [expandedAnnualLineItems, setExpandedAnnualLineItems] = useState({});
+  const [isPremium, setIsPremium] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   useEffect(() => {
     try {
@@ -481,10 +483,14 @@ function App() {
 
   const handleSelectMonth = useCallback((e, plannerId, monthKey) => {
     if (e) e.stopPropagation();
+    if (monthKey === 'annual' && !isPremium) {
+      setShowUpgradeModal(true);
+      return;
+    }
     setActivePlannerId(plannerId);
     setActiveMonthKey(monthKey);
     setEditingPlannerId(null);
-  }, []);
+  }, [isPremium]);
 
   const markActiveUnsaved = useCallback(() => {
     setUnsavedPlannerIds((prev) => (prev.includes(activePlannerId) ? prev : [...prev, activePlannerId]));
@@ -606,10 +612,14 @@ function App() {
   }, [activePlannerId]);
 
   const handleNewPlannerOpen = useCallback(() => {
+    if (!isPremium && planners.length >= 1) {
+      setShowUpgradeModal(true);
+      return;
+    }
     setShowNewPlannerForm(true);
     setNewPlannerName('');
     setNewPlannerIncome('');
-  }, []);
+  }, [isPremium, planners.length]);
 
   const handleNewPlannerCreate = useCallback(() => {
     const name = newPlannerName.trim() || 'My Budget';
@@ -972,10 +982,10 @@ function App() {
               <li key={monthKey}>
                 <button
                   type="button"
-                  className={`sidebar-month-tab ${planner.id === activePlannerId && activeMonthKey === monthKey ? 'sidebar-month-tab-active' : ''} ${monthKey === 'annual' ? 'sidebar-month-tab-annual' : ''}`}
+                  className={`sidebar-month-tab ${planner.id === activePlannerId && activeMonthKey === monthKey ? 'sidebar-month-tab-active' : ''} ${monthKey === 'annual' ? 'sidebar-month-tab-annual' : ''} ${monthKey === 'annual' && !isPremium ? 'sidebar-month-tab-locked' : ''}`}
                   onClick={(e) => handleSelectMonth(e, planner.id, monthKey)}
                 >
-                  {MONTH_LABELS[monthKey]}
+                  {monthKey === 'annual' && !isPremium ? '🔒 ' : ''}{MONTH_LABELS[monthKey]}
                 </button>
               </li>
             ))}
@@ -1055,7 +1065,10 @@ function App() {
   return (
     <div className="app">
       <aside className="sidebar">
-        <h2 className="sidebar-title">My Planners</h2>
+        <h2 className="sidebar-title">
+          My Planners
+          {isPremium && <span className="sidebar-premium-badge">Premium ✨</span>}
+        </h2>
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -1099,8 +1112,12 @@ function App() {
             </div>
           </div>
         ) : (
-          <button type="button" className="sidebar-new-btn" onClick={handleNewPlannerOpen}>
-            + New Planner
+          <button
+            type="button"
+            className={`sidebar-new-btn ${!isPremium && planners.length >= 1 ? 'sidebar-new-btn-locked' : ''}`}
+            onClick={handleNewPlannerOpen}
+          >
+            {!isPremium && planners.length >= 1 ? '🔒 ' : ''}+ New Planner
           </button>
         )}
         {plannerToDelete && (
@@ -1111,6 +1128,34 @@ function App() {
                 <button type="button" className="sidebar-delete-yes" onClick={() => handleDeleteConfirm(true)}>Yes</button>
                 <button type="button" className="sidebar-delete-no" onClick={() => handleDeleteConfirm(false)}>No</button>
               </div>
+            </div>
+          </div>
+        )}
+        {showUpgradeModal && (
+          <div className="upgrade-modal-overlay" onClick={() => setShowUpgradeModal(false)}>
+            <div className="upgrade-modal" onClick={(e) => e.stopPropagation()}>
+              <h2 className="upgrade-modal-logo">BudgetFlow</h2>
+              <h3 className="upgrade-modal-headline">Unlock BudgetFlow Premium</h3>
+              <p className="upgrade-modal-subheadline">One time payment — yours forever</p>
+              <p className="upgrade-modal-price">$17</p>
+              <ul className="upgrade-modal-features">
+                <li><span className="upgrade-modal-check">✅</span> Unlimited planners</li>
+                <li><span className="upgrade-modal-check">✅</span> Annual overview & reporting</li>
+                <li><span className="upgrade-modal-check">✅</span> Unlimited line items per category</li>
+              </ul>
+              <button
+                type="button"
+                className="upgrade-modal-cta"
+                onClick={() => {
+                  setIsPremium(true);
+                  setShowUpgradeModal(false);
+                }}
+              >
+                Get Premium — $17
+              </button>
+              <button type="button" className="upgrade-modal-later" onClick={() => setShowUpgradeModal(false)}>
+                Maybe later
+              </button>
             </div>
           </div>
         )}
@@ -1367,9 +1412,11 @@ function App() {
                     </SortableContext>
                   </DndContext>
                 </div>
-                <button type="button" className="add-row-btn" onClick={() => addRow(panel.key)} style={{ borderColor: panel.accent, color: panel.accent }}>
-                  + Add row
-                </button>
+                {(isPremium || rows.length < 8) && (
+                  <button type="button" className="add-row-btn" onClick={() => addRow(panel.key)} style={{ borderColor: panel.accent, color: panel.accent }}>
+                    + Add row
+                  </button>
+                )}
               </div>
             );
           })}
