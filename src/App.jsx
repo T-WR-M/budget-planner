@@ -53,6 +53,8 @@ const MONTH_KEYS = ['annual', 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', '
 const CALENDAR_MONTH_KEYS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
 const MONTH_LABELS = { annual: '📊 Annual Overview', jan: 'Jan', feb: 'Feb', mar: 'Mar', apr: 'Apr', may: 'May', jun: 'Jun', jul: 'Jul', aug: 'Aug', sep: 'Sep', oct: 'Oct', nov: 'Nov', dec: 'Dec' };
 const STORAGE_KEY = 'budgetflow-planners';
+const PLANNERS_VERSION = '2';
+const PLANNERS_VERSION_KEY = 'budgetflow-planners-version';
 
 if (!localStorage.getItem('budgetflow-v2')) {
   localStorage.removeItem('budgetflow-planners');
@@ -1014,6 +1016,15 @@ function getDefaultPlanners() {
   return ids.map((id, i) => createPlannerFromTemplate(`planner-${id}`, names[i], PROFESSION_TEMPLATES[id]));
 }
 
+function getInitialPlanners() {
+  if (localStorage.getItem(PLANNERS_VERSION_KEY) !== PLANNERS_VERSION) {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.setItem(PLANNERS_VERSION_KEY, PLANNERS_VERSION);
+    return getDefaultPlanners();
+  }
+  return loadPlannersFromStorage() ?? getDefaultPlanners();
+}
+
 function loadPlannersFromStorage() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -1053,15 +1064,15 @@ function getCurrentMonthKey() {
 }
 
 function App() {
-  const [planners, setPlanners] = useState(() => loadPlannersFromStorage() ?? getDefaultPlanners());
+  const [planners, setPlanners] = useState(() => getInitialPlanners());
   const [activePlannerId, setActivePlannerId] = useState(() => {
-    const loaded = loadPlannersFromStorage();
-    return (loaded && loaded[0]?.id) ?? getDefaultPlanners()[0].id;
+    const initial = getInitialPlanners();
+    return (initial && initial[0]?.id) ?? getDefaultPlanners()[0].id;
   });
   const [activeMonthKey, setActiveMonthKey] = useState(() => getCurrentMonthKey());
   const [expandedPlannerIds, setExpandedPlannerIds] = useState(() => {
-    const loaded = loadPlannersFromStorage();
-    const id = (loaded && loaded[0]?.id) ?? getDefaultPlanners()[0].id;
+    const initial = getInitialPlanners();
+    const id = (initial && initial[0]?.id) ?? getDefaultPlanners()[0].id;
     return [id];
   });
   const [unsavedPlannerIds, setUnsavedPlannerIds] = useState([]);
