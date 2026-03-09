@@ -53,6 +53,11 @@ const MONTH_KEYS = ['annual', 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', '
 const MONTH_LABELS = { annual: '📊 Annual Overview', jan: 'Jan', feb: 'Feb', mar: 'Mar', apr: 'Apr', may: 'May', jun: 'Jun', jul: 'Jul', aug: 'Aug', sep: 'Sep', oct: 'Oct', nov: 'Nov', dec: 'Dec' };
 const STORAGE_KEY = 'budgetflow-planners';
 
+if (!localStorage.getItem('budgetflow-v2')) {
+  localStorage.removeItem('budgetflow-planners');
+  localStorage.setItem('budgetflow-v2', 'true');
+}
+
 // Profession templates for default planners: pre-filled item names and planned amounts (realistic for that salary)
 const PROFESSION_TEMPLATES = {
   nurse: {
@@ -318,17 +323,17 @@ function createRow(id, name = '', planned = '', actual = '') {
 
 function createEmptyPanel(placeholders, count = 8) {
   return Array.from({ length: count }, (_, i) =>
-    createRow(`row-${Date.now()}-${i}`, '', '', '')
+    createRow(`row-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`, '', '', '')
   );
 }
 
 function templateToRows(templateRows, minRows = 8) {
   const sliced = (templateRows || []).slice(0, minRows);
   const base = sliced.map((r, i) =>
-    createRow(`row-${Date.now()}-${i}`, r.name, r.planned, '')
+    createRow(`row-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`, r.name, r.planned, '')
   );
   while (base.length < minRows) {
-    base.push(createRow(`row-${Date.now()}-${base.length}`, '', '', ''));
+    base.push(createRow(`row-${Date.now()}-${base.length}-${Math.random().toString(36).slice(2, 7)}`, '', '', ''));
   }
   return base;
 }
