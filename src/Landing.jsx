@@ -8,6 +8,18 @@ const PROFESSIONS = [
   { emoji: '💻', name: 'Software Engineer', income: 7500, bar: [32, 32, 18, 18] },
   { emoji: '👮', name: 'Police Officer', income: 4200, bar: [36, 30, 20, 14] },
   { emoji: '🔧', name: 'Electrician', income: 4800, bar: [34, 30, 20, 16] },
+  { emoji: '⚖️', name: 'Lawyer', income: 9500, bar: [42, 23, 21, 23] },
+  { emoji: '💪', name: 'Personal Trainer', income: 3200, bar: [55, 33, 17, 9] },
+  { emoji: '✈️', name: 'Flight Attendant', income: 4100, bar: [45, 31, 16, 20] },
+  { emoji: '🏗️', name: 'Construction Worker', income: 4600, bar: [46, 28, 17, 12] },
+  { emoji: '💊', name: 'Pharmacist', income: 8200, bar: [36, 23, 26, 23] },
+  { emoji: '🤝', name: 'Social Worker', income: 3400, bar: [50, 29, 22, 10] },
+  { emoji: '🎖️', name: 'Military', income: 3800, bar: [15, 29, 11, 22] },
+  { emoji: '👨‍🍳', name: 'Chef / Cook', income: 3100, bar: [52, 32, 16, 7] },
+  { emoji: '🚛', name: 'Truck Driver', income: 5100, bar: [45, 25, 20, 17] },
+  { emoji: '📊', name: 'Accountant', income: 6200, bar: [39, 25, 19, 22] },
+  { emoji: '🩹', name: 'Physical Therapist', income: 6800, bar: [37, 23, 21, 21] },
+  { emoji: '🦷', name: 'Dental Hygienist', income: 5800, bar: [38, 24, 21, 21] },
 ];
 
 const CATEGORY_COLORS = ['#3b82f6', '#f97316', '#22c55e', '#a855f7'];
@@ -27,7 +39,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'What professions are included?',
-    a: 'We include templates for Nurse, Teacher, Software Engineer, Police Officer, Electrician and more. You can also create fully custom planners for any income.',
+    a: 'We include templates for Nurse, Teacher, Software Engineer, Police Officer, Electrician, Lawyer, Personal Trainer, Flight Attendant, Construction Worker, Pharmacist, Social Worker, Military, Chef, Truck Driver, Accountant, Physical Therapist, Dental Hygienist and more. You can also create fully custom planners for any income.',
   },
   {
     q: 'Can I try it before buying?',
