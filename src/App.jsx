@@ -1189,6 +1189,30 @@ function App() {
     [activePlannerId, activeMonthKey, markActiveUnsaved]
   );
 
+  const deleteRow = useCallback(
+    (panelKey, rowId) => {
+      setPlanners((prev) => {
+        const active = prev.find((p) => p.id === activePlannerId);
+        if (!active?.months?.[activeMonthKey]) return prev;
+        const currentRows = active.months[activeMonthKey].panels[panelKey] || [];
+        if (currentRows.length <= 1) return prev;
+        const newRows = currentRows.filter((r) => r.id !== rowId);
+        const newPanels = { ...active.months[activeMonthKey].panels, [panelKey]: newRows };
+        const nextPlanners = prev.map((p) =>
+          p.id === activePlannerId
+            ? { ...p, months: { ...p.months, [activeMonthKey]: { panels: newPanels } } }
+            : p
+        );
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(nextPlanners));
+        } catch (_) {}
+        return nextPlanners;
+      });
+      markActiveUnsaved();
+    },
+    [activePlannerId, activeMonthKey, markActiveUnsaved]
+  );
+
   const handlePanelDragEnd = useCallback((panelKey, event) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -1633,7 +1657,7 @@ function App() {
     );
   }
 
-  function SortablePanelRow({ id, row, panelKey, panel, index }) {
+  function SortablePanelRow({ id, row, panelKey, panel, index, canDelete }) {
     const {
       attributes,
       listeners,
@@ -1696,6 +1720,19 @@ function App() {
           min="0"
           step="0.01"
         />
+        {canDelete ? (
+          <button
+            type="button"
+            className="panel-row-delete"
+            onClick={() => deleteRow(panelKey, row.id)}
+            title="Remove row"
+            aria-label="Remove row"
+          >
+            ✕
+          </button>
+        ) : (
+          <span className="panel-row-delete-spacer" aria-hidden />
+        )}
       </div>
     );
   }
@@ -2044,6 +2081,7 @@ function App() {
                     <span className="row-label">Item</span>
                     <span className="row-planned">Planned</span>
                     <span className="row-actual">Actual</span>
+                    <span className="panel-row-delete-spacer" aria-hidden />
                   </div>
                   <DndContext
                     sensors={sensors}
@@ -2062,6 +2100,7 @@ function App() {
                           panelKey={panel.key}
                           panel={panel}
                           index={idx}
+                          canDelete={rows.length > 1}
                         />
                       ))}
                     </SortableContext>
