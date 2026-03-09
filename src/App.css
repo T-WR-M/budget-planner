@@ -516,6 +516,67 @@
   color: #64748b;
 }
 
+.annual-income-section .income-label {
+  margin-bottom: 0.25rem;
+}
+
+.annual-income-value {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.annual-panel .annual-line-items-toggle {
+  margin-top: 6px;
+  padding: 4px 0;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #3b82f6;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+
+.annual-line-items-toggle:hover {
+  text-decoration: underline;
+}
+
+.annual-line-items-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 6px;
+}
+
+.annual-line-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 12px;
+}
+
+.annual-line-item-name {
+  color: #334155;
+}
+
+.annual-line-item-amount {
+  font-weight: 700;
+}
+
+.annual-line-items-empty {
+  margin: 8px 0 0;
+  padding-top: 6px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 12px;
+  color: #64748b;
+}
+
 .income-input {
   width: 100%;
   max-width: 280px;

@@ -50,6 +50,7 @@ const REMAINING_COLOR = '#14b8a6';
 const OVER_BUDGET_COLOR = '#ef4444';
 
 const MONTH_KEYS = ['annual', 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+const CALENDAR_MONTH_KEYS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
 const MONTH_LABELS = { annual: '📊 Annual Overview', jan: 'Jan', feb: 'Feb', mar: 'Mar', apr: 'Apr', may: 'May', jun: 'Jun', jul: 'Jul', aug: 'Aug', sep: 'Sep', oct: 'Oct', nov: 'Nov', dec: 'Dec' };
 const STORAGE_KEY = 'budgetflow-planners';
 
@@ -459,6 +460,7 @@ function App() {
   const [editingPlannerName, setEditingPlannerName] = useState('');
   const [plannerToDelete, setPlannerToDelete] = useState(null);
   const [saveMessage, setSaveMessage] = useState(null);
+  const [expandedAnnualLineItems, setExpandedAnnualLineItems] = useState({});
 
   useEffect(() => {
     try {
@@ -712,6 +714,100 @@ function App() {
       maximumFractionDigits: 2,
     }).format(num);
   };
+
+  const isAnnualView = activeMonthKey === 'annual';
+  const monthlyIncomeForAnnual = parseFloat(activePlanner?.income) || 0;
+  const annualIncome = monthlyIncomeForAnnual * 12;
+  const annualPanelTotals = isAnnualView
+    ? PANEL_KEYS.reduce((acc, panelKey) => {
+        let planned = 0;
+        let actual = 0;
+        CALENDAR_MONTH_KEYS.forEach((m) => {
+          const rows = activePlanner?.months?.[m]?.panels?.[panelKey] || [];
+          rows.forEach((row) => {
+            planned += parseFloat(row.planned) || 0;
+            actual += parseFloat(row.actual) || 0;
+          });
+        });
+        acc[panelKey] = { planned, actual };
+        return acc;
+      }, {})
+    : null;
+  const totalAnnualActual = annualPanelTotals
+    ? PANEL_KEYS.reduce((sum, key) => sum + (annualPanelTotals[key]?.actual ?? 0), 0)
+    : 0;
+  const annualRemaining = annualIncome - totalAnnualActual;
+  const annualLineItemsByPanel = isAnnualView
+    ? PANEL_KEYS.reduce((acc, panelKey) => {
+        const map = new Map();
+        CALENDAR_MONTH_KEYS.forEach((m) => {
+          const rows = activePlanner?.months?.[m]?.panels?.[panelKey] || [];
+          rows.forEach((row) => {
+            const val = parseFloat(row.actual) || 0;
+            if (val <= 0) return;
+            const name = (row.name || '').trim();
+            if (!name) return;
+            const key = name.toLowerCase();
+            if (!map.has(key)) map.set(key, { name, actual: 0 });
+            const entry = map.get(key);
+            entry.actual += val;
+          });
+        });
+        acc[panelKey] = Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+        return acc;
+      }, {})
+    : null;
+  const annualChartData = isAnnualView
+    ? annualIncome === 0
+      ? [
+          { name: 'Bills', value: 1, color: '#94a3b8' },
+          { name: 'Expenses', value: 1, color: '#cbd5e1' },
+          { name: 'Debt', value: 1, color: '#e2e8f0' },
+          { name: 'Savings', value: 1, color: '#f1f5f9' },
+        ]
+      : totalAnnualActual === 0
+        ? [{ name: 'Remaining', value: annualIncome, color: REMAINING_COLOR }]
+        : annualRemaining >= 0
+          ? [
+              ...PANEL_KEYS.map((key) => ({
+                name: PANELS.find((p) => p.key === key).title,
+                value: annualPanelTotals[key].actual,
+                color: CHART_COLORS[key],
+              })),
+              { name: 'Remaining', value: annualRemaining, color: REMAINING_COLOR },
+            ]
+          : (() => {
+              const scale = (2 * annualIncome - totalAnnualActual) / totalAnnualActual;
+              return [
+                ...PANEL_KEYS.map((key) => ({
+                  name: PANELS.find((p) => p.key === key).title,
+                  value: annualPanelTotals[key].actual * scale,
+                  color: CHART_COLORS[key],
+                })),
+                { name: 'Over Budget', value: totalAnnualActual - annualIncome, color: OVER_BUDGET_COLOR },
+              ];
+            })()
+    : null;
+  const annualChartLegendItems = isAnnualView && annualPanelTotals
+    ? [
+        ...PANEL_KEYS.map((key) => ({
+          name: PANELS.find((p) => p.key === key).title,
+          actual: annualPanelTotals[key].actual,
+          color: CHART_COLORS[key],
+          pct: annualIncome > 0 ? (annualPanelTotals[key].actual / annualIncome) * 100 : 0,
+        })),
+        {
+          name: annualRemaining >= 0 ? 'Remaining' : 'Over Budget',
+          actual: annualRemaining,
+          color: annualRemaining >= 0 ? REMAINING_COLOR : OVER_BUDGET_COLOR,
+          pct: annualIncome > 0 ? (Math.abs(annualRemaining) / annualIncome) * 100 : 0,
+          isOverBudget: annualRemaining < 0,
+        },
+      ]
+    : null;
+  const toggleAnnualLineItems = useCallback((panelKey) => {
+    setExpandedAnnualLineItems((prev) => ({ ...prev, [panelKey]: !prev[panelKey] }));
+  }, []);
 
   const chartData =
     numIncome === 0
@@ -1052,30 +1148,132 @@ function App() {
         )}
 
         <main className="main">
-          <section className="income-section">
-            <label htmlFor="income" className="income-label">
-              Monthly income <span className="income-planner-name">— {activePlanner?.name}</span>
-            </label>
-          <input
-            id="income"
-            type="number"
-            inputMode="decimal"
-            placeholder="0.00"
-            value={income}
-            onChange={handleIncomeChange}
-            className="income-input"
-            min="0"
-            step="0.01"
-          />
-          <p className="remaining-balance">
-            Remaining balance: <span className={remaining >= 0 ? 'remaining-positive' : 'remaining-negative'}>{formatCurrency(String(remaining))}</span>
-          </p>
-        </section>
+          {isAnnualView ? (
+            <section className="income-section annual-income-section">
+              <div className="income-label">
+                Annual income <span className="income-planner-name">— {activePlanner?.name}</span>
+              </div>
+              <p className="annual-income-value">{formatCurrency(String(annualIncome))}</p>
+            </section>
+          ) : (
+            <section className="income-section">
+              <label htmlFor="income" className="income-label">
+                Monthly income <span className="income-planner-name">— {activePlanner?.name}</span>
+              </label>
+              <input
+                id="income"
+                type="number"
+                inputMode="decimal"
+                placeholder="0.00"
+                value={income}
+                onChange={handleIncomeChange}
+                className="income-input"
+                min="0"
+                step="0.01"
+              />
+              <p className="remaining-balance">
+                Remaining balance: <span className={remaining >= 0 ? 'remaining-positive' : 'remaining-negative'}>{formatCurrency(String(remaining))}</span>
+              </p>
+            </section>
+          )}
 
-        {activeMonthKey === 'annual' ? (
-          <section className="annual-placeholder">
-            <p className="annual-placeholder-text">Annual overview — coming soon</p>
-          </section>
+        {isAnnualView ? (
+          totalAnnualActual === 0 ? (
+            <section className="annual-placeholder">
+              <p className="annual-placeholder-text">No monthly data yet — start filling in your monthly budgets</p>
+            </section>
+          ) : (
+            <>
+              <section className="chart-section">
+                <div className="chart-card">
+                  <div className="chart-wrapper">
+                    <ResponsiveContainer width="100%" height={160}>
+                      <PieChart>
+                        <Pie
+                          data={annualChartData}
+                          dataKey="value"
+                          nameKey="name"
+                          innerRadius="58%"
+                          outerRadius="88%"
+                          paddingAngle={0}
+                          isAnimationActive
+                          animationDuration={500}
+                          animationEasing="ease-out"
+                        >
+                          {annualChartData.map((entry, index) => (
+                            <Cell key={`${entry.name}-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className={`chart-center-label ${annualIncome === 0 ? 'chart-center-label-placeholder' : ''}`}>
+                      {annualIncome > 0 ? formatCurrency(String(totalAnnualActual)) : '$0'}
+                    </div>
+                  </div>
+                  <div className="chart-stats">
+                    {annualChartLegendItems.map((item) => (
+                      <div key={item.name} className={`chart-stat-block ${item.isOverBudget ? 'chart-stat-overbudget' : ''}`}>
+                        <span className="chart-stat-dot" style={{ backgroundColor: item.color }} />
+                        <div className="chart-stat-content">
+                          <span className="chart-stat-name">
+                            {item.name}
+                            {item.isOverBudget && <span className="chart-stat-warning" title="Over budget"> ⚠</span>}
+                          </span>
+                          <span className="chart-stat-amount">
+                            {item.actual < 0 ? `-${formatCurrency(String(Math.abs(item.actual)))}` : formatCurrency(item.actual)}
+                          </span>
+                          <span className="chart-stat-pct">{item.pct.toFixed(1)}%</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              <section className="panels-section annual-panels-section">
+                {PANELS.map((panel) => {
+                  const totals = annualPanelTotals[panel.key] || { planned: 0, actual: 0 };
+                  const pctIncome = annualIncome > 0 ? (totals.actual / annualIncome) * 100 : 0;
+                  const plannedPct = annualIncome > 0 ? (totals.planned / annualIncome) * 100 : 0;
+                  const lineItems = annualLineItemsByPanel[panel.key] || [];
+                  const isExpanded = expandedAnnualLineItems[panel.key];
+                  return (
+                    <div key={panel.key} className="budget-panel card annual-panel" data-panel={panel.key}>
+                      <div className="panel-accent" style={{ background: panel.accent }} />
+                      <h2 className="panel-title" style={{ borderBottomColor: panel.accent }}>{panel.title}</h2>
+                      <div className="panel-totals panel-totals-top">
+                        <div className="panel-totals-main">
+                          <span className="panel-total-actual" style={{ color: panel.accent }}>{formatCurrency(totals.actual)}</span>
+                          <span className="panel-total-pct-large">{pctIncome.toFixed(1)}%</span>
+                        </div>
+                        <span className="panel-total-planned">Planned {formatCurrency(totals.planned)} ({plannedPct.toFixed(1)}% of annual income)</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="annual-line-items-toggle"
+                        onClick={() => toggleAnnualLineItems(panel.key)}
+                      >
+                        {isExpanded ? 'View Line Items ▲' : 'View Line Items ▼'}
+                      </button>
+                      {isExpanded && lineItems.length > 0 && (
+                        <ul className="annual-line-items-list">
+                          {lineItems.map((item, i) => (
+                            <li key={`${item.name}-${i}`} className="annual-line-item">
+                              <span className="annual-line-item-name">{item.name}</span>
+                              <span className="annual-line-item-amount" style={{ color: panel.accent }}>{formatCurrency(item.actual)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {isExpanded && lineItems.length === 0 && (
+                        <p className="annual-line-items-empty">No line items with actual amounts</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </section>
+            </>
+          )
         ) : (
           <>
         <section className="chart-section">
