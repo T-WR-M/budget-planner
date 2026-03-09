@@ -70,6 +70,38 @@ const GOAL_CATEGORY_COLORS = {
 const GOAL_PRIORITIES = ['High', 'Medium', 'Low'];
 const GOAL_PRIORITY_EMOJI = { High: '🔴', Medium: '🟡', Low: '🟢' };
 const STORAGE_KEY = 'budgetflow-planners';
+
+const HELP_FAQ = [
+  { id: 'getting-started', title: 'Getting Started', items: [
+    { q: 'How do I set up my first budget planner?', a: 'When you first open BudgetFlow you will see profession templates in the sidebar. Click any profession to load a pre-built budget template, or click "+ New Planner" at the bottom of the sidebar to create a custom planner. Enter your monthly take-home pay in the income field at the top. Then fill in your planned amounts for each category — Bills, Expenses, Debt, and Savings. As the month progresses come back and fill in your actual amounts to track your real spending.' },
+    { q: 'What is the difference between Planned and Actual amounts?', a: 'Planned amounts are what you budget to spend before the month begins. Actual amounts are what you really spent. Filling in both lets you see where you are over or under budget in real time. The chart updates automatically to reflect your actual spending.' },
+    { q: 'How do I add a new planner?', a: 'Click the "+ New Planner" button at the bottom of the sidebar. Enter a name and your monthly income. A new blank planner will be created and added to your sidebar. You can create planners for different scenarios like a side hustle income or a partner\'s budget.' },
+    { q: 'How do I save and switch between planners?', a: 'Click the Save button in the top right to save your current planner. To switch planners click any planner name in the sidebar. Your data auto-saves every 30 seconds as well. Each planner stores its own independent data for all 12 months.' },
+  ]},
+  { id: 'tracking', title: 'Tracking Your Budget', pillLabel: 'Chart', items: [
+    { q: 'How do I track planned vs actual spending?', a: 'Each row in the 4 budget panels has three fields: Item name, Planned amount, and Actual amount. Fill in Planned at the start of the month. As you spend money throughout the month update the Actual column. The chart and totals update instantly to show your real spending vs your plan.' },
+    { q: 'How do I read the chart?', a: 'The donut chart at the top shows how your actual spending is distributed across all 4 categories plus your remaining balance. Each color represents a category: Blue is Bills, Orange is Expenses, Green is Debt, Purple is Savings, and Teal is your Remaining balance. The percentages show what portion of your income goes to each area. Hover over a slice to see exact amounts.' },
+    { q: 'Can I add more line items to a category?', a: 'Free users can have up to 8 rows per category. Premium users can add unlimited rows using the "+ Add row" button at the bottom of each panel. To remove a row hover over it and click the × delete button on the right side.' },
+  ]},
+  { id: 'goals', title: 'Goals', items: [
+    { q: 'How do I use the Goals tab?', a: 'Click the "🎯 Goals" tab under any planner in the sidebar. Click "+ Add Goal" to create a new savings goal. Fill in the goal name, category, target amount, how much you have already saved, and your monthly contribution. BudgetFlow will automatically calculate your estimated completion date. The progress bar updates as you save more money toward your goal.' },
+    { q: 'How is the estimated completion date calculated?', a: 'BudgetFlow takes your target amount, subtracts what you have already saved, and divides by your monthly contribution to calculate how many months until you reach your goal. For example if your goal is $10,000, you have saved $2,000, and you contribute $200/month — you have $8,000 remaining which is 40 months or about 3 years and 4 months.' },
+  ]},
+  { id: 'annual', title: 'Annual Overview', items: [
+    { q: 'What is the Annual Overview?', a: 'The Annual Overview tab summarizes your entire year of budgeting in one view. It adds up all 12 months of actual spending for each category and shows your total annual income, total spent, and remaining balance. The line items dropdown shows every expense you entered across all months sorted alphabetically with annual totals.' },
+    { q: 'Why are some months showing $0 in the Annual Overview?', a: 'Only months where you have entered actual amounts will show data. Future months you haven\'t filled in yet will show $0 in the actual column but will still show your planned amounts.' },
+  ]},
+  { id: 'premium', title: 'Premium', items: [
+    { q: 'What do I get with Premium?', a: 'BudgetFlow Premium is a one time payment of $17. It unlocks unlimited planners, the Annual Overview tab, and unlimited line items per category. Free users are limited to 1 planner and 8 rows per category.' },
+    { q: 'Is Premium a subscription?', a: 'No. It is a one time payment of $17. Pay once and use BudgetFlow Premium forever with no recurring charges.' },
+    { q: 'How do I upgrade to Premium?', a: 'Click the lock icon next to any premium feature or click "+ New Planner" when you already have one planner. The upgrade modal will appear with a button to complete your purchase.' },
+  ]},
+  { id: 'saving-data', title: 'Saving Your Data', items: [
+    { q: 'Where is my data stored?', a: 'Your budget data is saved locally in your browser using localStorage. It stays on your device and is never uploaded to a server or shared with anyone. This means your data is private but is tied to the specific browser and device you use.' },
+    { q: 'Will I lose my data if I clear my browser?', a: 'Yes. Since data is stored locally in your browser, clearing your browser cache or cookies will erase your budget data. We recommend taking a screenshot or exporting your budget regularly. Cloud sync is coming in a future update.' },
+    { q: 'Can I use BudgetFlow on multiple devices?', a: 'Currently your data is stored locally so it does not sync between devices. Cloud sync across devices is on our roadmap for a future update.' },
+  ]},
+];
 const PLANNERS_VERSION = '3';
 const PLANNERS_VERSION_KEY = 'budgetflow-planners-version';
 
@@ -1205,6 +1237,57 @@ function createEmptyGoal() {
   };
 }
 
+const EXAMPLE_PLANNER_ID = 'example-budget';
+
+function buildExampleMonthPanels(monthKey, withActuals) {
+  const pid = (panelKey, i) => `example-${monthKey}-${panelKey}-${i}`;
+  const bills = [
+    [1200, 1200], [120, 134], [85, 85], [60, 60], [15, 15], [130, 130], [180, 180], [20, 20],
+  ];
+  const expenses = [
+    [350, 412], [150, 167], [120, 189], [80, 95], [60, 0], [50, 48], [40, 35], [60, 60],
+  ];
+  const debt = [[280, 280], [200, 200], [100, 100], [50, 50]];
+  const savings = [[150, 150], [200, 200], [100, 100], [50, 50]];
+  const billNames = ['Rent', 'Utilities', 'Phone', 'Internet', 'Netflix', 'Car insurance', 'Health insurance', 'Renters insurance'];
+  const expenseNames = ['Groceries', 'Gas', 'Dining out', 'Entertainment', 'Clothing', 'Personal care', 'Household', 'Pets'];
+  const debtNames = ['Car payment', 'Student loans', 'Credit card', 'Medical debt'];
+  const savingsNames = ['Emergency fund', '401(k)', 'Roth IRA', 'Stocks'];
+  const emptyRow = (panelKey, i) => createRow(pid(panelKey, i), '', '', '', '');
+  return {
+    bills: bills.map((pair, i) => createRow(pid('bills', i), billNames[i], String(pair[0]), withActuals ? String(pair[1]) : '', billNames[i])),
+    expenses: expenses.map((pair, i) => createRow(pid('expenses', i), expenseNames[i], String(pair[0]), withActuals ? String(pair[1]) : '', expenseNames[i])),
+    debt: [
+      ...debt.map((pair, i) => createRow(pid('debt', i), debtNames[i], String(pair[0]), withActuals ? String(pair[1]) : '', debtNames[i])),
+      ...Array.from({ length: 4 }, (_, i) => emptyRow('debt', 4 + i)),
+    ],
+    savings: [
+      ...savings.map((pair, i) => createRow(pid('savings', i), savingsNames[i], String(pair[0]), withActuals ? String(pair[1]) : '', savingsNames[i])),
+      ...Array.from({ length: 4 }, (_, i) => emptyRow('savings', 4 + i)),
+    ],
+  };
+}
+
+function getExamplePlanner() {
+  const months = {};
+  CALENDAR_MONTH_KEYS.forEach((m, idx) => {
+    months[m] = { panels: buildExampleMonthPanels(m, idx < 3) };
+  });
+  months.annual = { panels: buildExampleMonthPanels('annual', false) };
+  const goals = [
+    { id: 'example-goal-1', name: 'Emergency Fund', category: 'Emergency Fund', priority: 'High', targetAmount: '13500', currentSaved: '4200', monthlyContribution: '150', targetDate: '2027-09-01', notes: '' },
+    { id: 'example-goal-2', name: 'Vacation to Europe', category: 'Vacation', priority: 'Medium', targetAmount: '4000', currentSaved: '800', monthlyContribution: '150', targetDate: '2026-12-01', notes: '' },
+    { id: 'example-goal-3', name: 'Home Down Payment', category: 'House', priority: 'High', targetAmount: '30000', currentSaved: '3500', monthlyContribution: '300', targetDate: '2028-12-01', notes: '' },
+  ];
+  return {
+    id: EXAMPLE_PLANNER_ID,
+    name: 'Example Budget',
+    income: '4500',
+    months,
+    goals,
+  };
+}
+
 function App() {
   const { isLoaded, isSignedIn } = useAuth();
   const navigate = useNavigate();
@@ -1242,6 +1325,9 @@ function App() {
   const [goalModalEditingId, setGoalModalEditingId] = useState(null);
   const [goalForm, setGoalForm] = useState(() => createEmptyGoal());
   const [expandedGoalNotes, setExpandedGoalNotes] = useState({});
+  const [showHelpModal, setShowHelpModal] = useState(false);
+  const [helpSearch, setHelpSearch] = useState('');
+  const [helpOpenSection, setHelpOpenSection] = useState(null);
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
@@ -1262,7 +1348,11 @@ function App() {
     } catch (_) {}
   }, [planners]);
 
-  const activePlanner = planners.find((p) => p.id === activePlannerId) ?? planners[0];
+  const activePlanner =
+    activePlannerId === EXAMPLE_PLANNER_ID
+      ? getExamplePlanner()
+      : (planners.find((p) => p.id === activePlannerId) ?? planners[0] ?? getExamplePlanner());
+  const isExamplePlanner = activePlannerId === EXAMPLE_PLANNER_ID;
   const activeMonthData = activePlanner?.months?.[activeMonthKey];
   const panels = activeMonthData?.panels ?? {};
   const income = activePlanner?.income ?? '';
@@ -1917,7 +2007,7 @@ function App() {
     );
   }
 
-  function SortablePanelRow({ id, row, panelKey, panel, index, canDelete }) {
+  function SortablePanelRow({ id, row, panelKey, panel, index, canDelete, readOnly }) {
     const {
       attributes,
       listeners,
@@ -1959,6 +2049,7 @@ function App() {
           placeholder={row.placeholder || 'Item'}
           value={row.name}
           onChange={(e) => updateRow(panelKey, row.id, 'name', e.target.value)}
+          readOnly={readOnly}
         />
         <input
           type="number"
@@ -1969,6 +2060,7 @@ function App() {
           onChange={(e) => updateRow(panelKey, row.id, 'planned', e.target.value)}
           min="0"
           step="0.01"
+          readOnly={readOnly}
         />
         <input
           type="number"
@@ -1979,8 +2071,9 @@ function App() {
           onChange={(e) => updateRow(panelKey, row.id, 'actual', e.target.value)}
           min="0"
           step="0.01"
+          readOnly={readOnly}
         />
-        {canDelete ? (
+        {!readOnly && canDelete ? (
           <button
             type="button"
             className="panel-row-delete"
@@ -2032,6 +2125,38 @@ function App() {
             </ul>
           </SortableContext>
         </DndContext>
+        <div className="sidebar-example-wrap">
+          <button
+            type="button"
+            className={`sidebar-example-tab ${activePlannerId === EXAMPLE_PLANNER_ID ? 'sidebar-tab-active' : ''}`}
+            onClick={() => {
+              setActivePlannerId(EXAMPLE_PLANNER_ID);
+              setExpandedPlannerIds((prev) => (prev.includes(EXAMPLE_PLANNER_ID) ? prev : [...prev, EXAMPLE_PLANNER_ID]));
+            }}
+          >
+            <span className="sidebar-example-icon">📋</span>
+            <span className="sidebar-example-label">Example Budget</span>
+            <span className="sidebar-example-badge">Reference</span>
+          </button>
+          {activePlannerId === EXAMPLE_PLANNER_ID && (
+            <ul className="sidebar-month-tabs">
+              {SIDEBAR_TAB_KEYS.map((monthKey) => (
+                <li key={monthKey}>
+                  <button
+                    type="button"
+                    className={`sidebar-month-tab ${activeMonthKey === monthKey ? 'sidebar-month-tab-active' : ''} ${monthKey === 'annual' ? 'sidebar-month-tab-annual' : ''} ${monthKey === 'goals' ? 'sidebar-month-tab-goals' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveMonthKey(monthKey);
+                    }}
+                  >
+                    {MONTH_LABELS[monthKey]}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
         {showNewPlannerForm ? (
           <div className="sidebar-new-form">
             <input
@@ -2106,6 +2231,86 @@ function App() {
             </div>
           </div>
         )}
+        {showHelpModal && (
+          <div className="help-modal-overlay" onClick={() => setShowHelpModal(false)}>
+            <div className="help-modal card" onClick={(e) => e.stopPropagation()}>
+              <div className="panel-accent" style={{ background: '#c9a84c' }} />
+              <div className="help-modal-header">
+                <h2 className="help-modal-title"><span className="help-modal-title-icon">?</span> Help Center</h2>
+                <button type="button" className="help-modal-close" onClick={() => setShowHelpModal(false)} aria-label="Close">×</button>
+              </div>
+              <div className="help-modal-search-wrap">
+                <input
+                  type="text"
+                  className="help-modal-search"
+                  placeholder="Search for help... (e.g. 'how to add a planner')"
+                  value={helpSearch}
+                  onChange={(e) => setHelpSearch(e.target.value)}
+                />
+                {helpSearch && (
+                  <button type="button" className="help-modal-search-clear" onClick={() => setHelpSearch('')} aria-label="Clear">×</button>
+                )}
+              </div>
+              <div className="help-modal-pills">
+                {HELP_FAQ.map((sec) => (
+                  <button
+                    key={sec.id}
+                    type="button"
+                    className="help-modal-pill"
+                    onClick={() => {
+                      document.getElementById(`help-section-${sec.id}`)?.scrollIntoView({ behavior: 'smooth' });
+                      setHelpOpenSection(sec.id);
+                    }}
+                  >
+                    {sec.pillLabel || sec.title}
+                  </button>
+                ))}
+              </div>
+              <div className="help-modal-faq">
+                {(() => {
+                  const query = helpSearch.trim().toLowerCase();
+                  const filtered = query
+                    ? HELP_FAQ.map((sec) => ({
+                        ...sec,
+                        items: sec.items.filter((item) =>
+                          item.q.toLowerCase().includes(query) || item.a.toLowerCase().includes(query) || sec.title.toLowerCase().includes(query)
+                        ),
+                      })).filter((sec) => sec.items.length > 0)
+                    : HELP_FAQ;
+                  if (filtered.length === 0) {
+                    return (
+                      <p className="help-modal-no-results">
+                        No results found for &quot;{helpSearch}&quot;. Try different keywords.
+                      </p>
+                    );
+                  }
+                  return filtered.map((section) => (
+                    <div key={section.id} id={`help-section-${section.id}`} className="help-faq-section">
+                      <button
+                        type="button"
+                        className={`help-faq-section-head ${helpOpenSection === section.id ? 'help-faq-section-open' : ''}`}
+                        onClick={() => setHelpOpenSection(helpOpenSection === section.id ? null : section.id)}
+                      >
+                        <span className="help-faq-chevron">{helpOpenSection === section.id ? '▼' : '▶'}</span>
+                        {section.title}
+                      </button>
+                      {helpOpenSection === section.id && (
+                        <div className="help-faq-section-body">
+                          {section.items.map((item, i) => (
+                            <div key={i} className="help-faq-item">
+                              <div className="help-faq-q">{item.q}</div>
+                              <div className="help-faq-a">{item.a}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ));
+                })()}
+              </div>
+            </div>
+          </div>
+        )}
       </aside>
 
       <div className="app-main">
@@ -2121,6 +2326,16 @@ function App() {
               <UserButton afterSignOutUrl="/" />
               <button
                 type="button"
+                className="header-help-btn"
+                onClick={() => setShowHelpModal(true)}
+                title="Help"
+                aria-label="Open help"
+              >
+                ?
+              </button>
+              {!isExamplePlanner && (
+              <button
+                type="button"
                 className="save-btn"
                 onClick={handleSave}
                 title="Save current planner"
@@ -2133,6 +2348,7 @@ function App() {
                 </svg>
                 Save
               </button>
+              )}
               <button
                 type="button"
                 className="theme-toggle-btn"
@@ -2154,6 +2370,15 @@ function App() {
         {saveMessage && (
           <div className={`save-toast save-toast-${saveMessage}`}>
             {saveMessage === 'saved' ? 'Saved!' : 'Auto-saved'}
+          </div>
+        )}
+
+        {isExamplePlanner && (
+          <div className="example-banner">
+            <span className="example-banner-text">📋 This is a reference example — create your own planner to start budgeting</span>
+            <button type="button" className="example-banner-btn" onClick={handleNewPlannerOpen}>
+              Create My Planner
+            </button>
           </div>
         )}
 
@@ -2180,6 +2405,7 @@ function App() {
                 className="income-input"
                 min="0"
                 step="0.01"
+                readOnly={isExamplePlanner}
               />
               <p className="remaining-balance">
                 Remaining balance: <span className={remaining >= 0 ? 'remaining-positive' : 'remaining-negative'}>{formatCurrency(String(remaining))}</span>
@@ -2194,9 +2420,11 @@ function App() {
                 <h1 className="goals-page-title">Savings Goals</h1>
                 <p className="goals-page-sub">Track your financial goals and see your progress</p>
               </div>
-              <button type="button" className="goals-add-btn" onClick={openAddGoalModal}>
-                + Add Goal
-              </button>
+              {!isExamplePlanner && (
+                <button type="button" className="goals-add-btn" onClick={openAddGoalModal}>
+                  + Add Goal
+                </button>
+              )}
             </div>
             <div className="goals-summary-bar card">
               <div className="panel-accent" style={{ background: '#c9a84c' }} />
@@ -2220,10 +2448,12 @@ function App() {
                 return (
                   <div key={goal.id} className="goal-card card">
                     <div className="panel-accent" style={{ background: '#c9a84c' }} />
-                    <div className="goal-card-actions">
-                      <button type="button" className="goal-card-btn" onClick={() => openEditGoalModal(goal)} title="Edit" aria-label="Edit goal">✎</button>
-                      <button type="button" className="goal-card-btn goal-card-btn-delete" onClick={() => deleteGoal(goal.id)} title="Delete" aria-label="Delete goal">🗑</button>
-                    </div>
+                    {!isExamplePlanner && (
+                      <div className="goal-card-actions">
+                        <button type="button" className="goal-card-btn" onClick={() => openEditGoalModal(goal)} title="Edit" aria-label="Edit goal">✎</button>
+                        <button type="button" className="goal-card-btn goal-card-btn-delete" onClick={() => deleteGoal(goal.id)} title="Delete" aria-label="Delete goal">🗑</button>
+                      </div>
+                    )}
                     <h3 className="goal-card-name">{goal.name || 'Unnamed Goal'}</h3>
                     <div className="goal-card-badges">
                       <span className="goal-badge goal-badge-category" style={{ backgroundColor: `${GOAL_CATEGORY_COLORS[goal.category] || GOAL_CATEGORY_COLORS.Other}33`, color: GOAL_CATEGORY_COLORS[goal.category] || GOAL_CATEGORY_COLORS.Other }}>{goal.category}</span>
@@ -2240,6 +2470,7 @@ function App() {
                         onChange={(e) => updateGoalField(goal.id, 'currentSaved', e.target.value)}
                         min="0"
                         step="0.01"
+                        readOnly={isExamplePlanner}
                       />
                     </div>
                     <div className="goal-card-progress">
@@ -2259,6 +2490,7 @@ function App() {
                         placeholder="0"
                         min="0"
                         step="0.01"
+                        readOnly={isExamplePlanner}
                       />
                     </div>
                     <p className="goal-card-est">
@@ -2529,12 +2761,13 @@ function App() {
                           panel={panel}
                           index={idx}
                           canDelete={rows.length > 1}
+                          readOnly={isExamplePlanner}
                         />
                       ))}
                     </SortableContext>
                   </DndContext>
                 </div>
-                {(isPremium || rows.length < 8) && (
+                {!isExamplePlanner && (isPremium || rows.length < 8) && (
                   <button type="button" className="add-row-btn" onClick={() => addRow(panel.key)} style={{ borderColor: panel.accent, color: panel.accent }}>
                     + Add row
                   </button>
