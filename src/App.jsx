@@ -317,23 +317,29 @@ const PROFESSION_TEMPLATES = {
   },
 };
 
-function createRow(id, name = '', planned = '', actual = '') {
-  return { id, name, planned: planned === '' ? '' : String(planned), actual: actual === '' ? '' : String(actual) };
+function createRow(id, name = '', planned = '', actual = '', placeholder = '') {
+  return {
+    id,
+    name,
+    planned: planned === '' ? '' : String(planned),
+    actual: actual === '' ? '' : String(actual),
+    placeholder,
+  };
 }
 
 function createEmptyPanel(placeholders, count = 8) {
   return Array.from({ length: count }, (_, i) =>
-    createRow(`row-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`, '', '', '')
+    createRow(`row-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`, '', '', '', placeholders[i] || '')
   );
 }
 
 function templateToRows(templateRows, minRows = 8) {
   const sliced = (templateRows || []).slice(0, minRows);
   const base = sliced.map((r, i) =>
-    createRow(`row-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`, r.name, r.planned, '')
+    createRow(`row-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`, r.name, r.planned, '', r.name || '')
   );
   while (base.length < minRows) {
-    base.push(createRow(`row-${Date.now()}-${base.length}-${Math.random().toString(36).slice(2, 7)}`, '', '', ''));
+    base.push(createRow(`row-${Date.now()}-${base.length}-${Math.random().toString(36).slice(2, 7)}`, '', '', '', ''));
   }
   return base;
 }
@@ -508,7 +514,7 @@ function App() {
         const currentPanels = active.months[activeMonthKey].panels;
         const newPanels = {
           ...currentPanels,
-          [panelKey]: [...currentPanels[panelKey], createRow(`row-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`, '', '', '')],
+          [panelKey]: [...currentPanels[panelKey], createRow(`row-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`, '', '', '', '')],
         };
         return prev.map((p) =>
           p.id === activePlannerId
@@ -521,24 +527,33 @@ function App() {
     [activePlannerId, activeMonthKey, markActiveUnsaved]
   );
 
-  const handleMoveRow = useCallback((panelKey, fromIndex, direction) => {
-    const toIndex = direction === 'up' ? fromIndex - 1 : fromIndex + 1;
+  const handlePanelDragEnd = useCallback((panelKey, event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
     setPlanners((prev) => {
       const activePlanner = prev.find((p) => p.id === activePlannerId);
       if (!activePlanner?.months?.[activeMonthKey]) return prev;
-      const items = [...(activePlanner.months[activeMonthKey].panels[panelKey] || [])];
-      if (toIndex < 0 || toIndex >= items.length) return prev;
-      const [removed] = items.splice(fromIndex, 1);
-      items.splice(toIndex, 0, removed);
-      const newPanels = { ...activePlanner.months[activeMonthKey].panels, [panelKey]: items };
+
+      const items = activePlanner.months[activeMonthKey].panels[panelKey] || [];
+      const activeId = String(active.id);
+      const overId = String(over.id);
+      const oldIndex = items.findIndex((item) => String(item.id) === activeId);
+      const newIndex = items.findIndex((item) => String(item.id) === overId);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+
+      const newArray = arrayMove(items, oldIndex, newIndex);
+      const newPanels = { ...activePlanner.months[activeMonthKey].panels, [panelKey]: newArray };
       const nextPlanners = prev.map((p) =>
         p.id === activePlannerId
           ? { ...p, months: { ...p.months, [activeMonthKey]: { panels: newPanels } } }
           : p
       );
+
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(nextPlanners));
       } catch (_) {}
+
       return nextPlanners;
     });
     markActiveUnsaved();
@@ -858,6 +873,73 @@ function App() {
     );
   }
 
+  function SortablePanelRow({ id, row, panelKey, panel, index }) {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id });
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+    };
+
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className={`panel-row ${isDragging ? 'panel-row-dragging' : ''}`}
+      >
+        <span
+          className="panel-row-grip"
+          title="Drag to reorder"
+          {...attributes}
+          {...listeners}
+        >
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="9" cy="6" r="1.5" />
+            <circle cx="15" cy="6" r="1.5" />
+            <circle cx="9" cy="12" r="1.5" />
+            <circle cx="15" cy="12" r="1.5" />
+            <circle cx="9" cy="18" r="1.5" />
+            <circle cx="15" cy="18" r="1.5" />
+          </svg>
+        </span>
+        <input
+          type="text"
+          className="row-input row-name"
+          placeholder={row.placeholder || 'Item'}
+          value={row.name}
+          onChange={(e) => updateRow(panelKey, row.id, 'name', e.target.value)}
+        />
+        <input
+          type="number"
+          inputMode="decimal"
+          className="row-input row-amount"
+          placeholder="0"
+          value={row.planned}
+          onChange={(e) => updateRow(panelKey, row.id, 'planned', e.target.value)}
+          min="0"
+          step="0.01"
+        />
+        <input
+          type="number"
+          inputMode="decimal"
+          className="row-input row-amount"
+          placeholder="0"
+          value={row.actual}
+          onChange={(e) => updateRow(panelKey, row.id, 'actual', e.target.value)}
+          min="0"
+          step="0.01"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       <aside className="sidebar">
@@ -1044,64 +1126,32 @@ function App() {
                 </div>
                 <div className="panel-rows">
                   <div className="panel-row panel-row-header">
-                    <span className="panel-row-move-spacer" aria-hidden />
+                    <span className="panel-row-grip-spacer" aria-hidden />
                     <span className="row-label">Item</span>
                     <span className="row-planned">Planned</span>
                     <span className="row-actual">Actual</span>
                   </div>
-                  {rows.map((row, idx) => (
-                    <div key={row.id} className="panel-row">
-                      <div className="panel-row-move-buttons">
-                        <button
-                          type="button"
-                          className="panel-row-move-btn"
-                          title="Move up"
-                          aria-label="Move row up"
-                          disabled={idx === 0}
-                          onClick={() => handleMoveRow(panel.key, idx, 'up')}
-                        >
-                          ▲
-                        </button>
-                        <button
-                          type="button"
-                          className="panel-row-move-btn"
-                          title="Move down"
-                          aria-label="Move row down"
-                          disabled={idx === rows.length - 1}
-                          onClick={() => handleMoveRow(panel.key, idx, 'down')}
-                        >
-                          ▼
-                        </button>
-                      </div>
-                      <input
-                        type="text"
-                        className="row-input row-name"
-                        placeholder={panel.placeholders[idx] || 'Item'}
-                        value={row.name}
-                        onChange={(e) => updateRow(panel.key, row.id, 'name', e.target.value)}
-                      />
-                      <input
-                        type="number"
-                        inputMode="decimal"
-                        className="row-input row-amount"
-                        placeholder="0"
-                        value={row.planned}
-                        onChange={(e) => updateRow(panel.key, row.id, 'planned', e.target.value)}
-                        min="0"
-                        step="0.01"
-                      />
-                      <input
-                        type="number"
-                        inputMode="decimal"
-                        className="row-input row-amount"
-                        placeholder="0"
-                        value={row.actual}
-                        onChange={(e) => updateRow(panel.key, row.id, 'actual', e.target.value)}
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
-                  ))}
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={(e) => handlePanelDragEnd(panel.key, e)}
+                  >
+                    <SortableContext
+                      items={rows.map((r) => r.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {rows.map((row, idx) => (
+                        <SortablePanelRow
+                          key={row.id}
+                          id={row.id}
+                          row={row}
+                          panelKey={panel.key}
+                          panel={panel}
+                          index={idx}
+                        />
+                      ))}
+                    </SortableContext>
+                  </DndContext>
                 </div>
                 <button type="button" className="add-row-btn" onClick={() => addRow(panel.key)} style={{ borderColor: panel.accent, color: panel.accent }}>
                   + Add row

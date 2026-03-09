@@ -622,42 +622,32 @@
   max-height: 28px;
 }
 
-.panel-row-move-spacer {
+.panel-row-grip,
+.panel-row-grip-spacer {
   flex-shrink: 0;
-  width: 32px;
-}
-
-.panel-row-move-buttons {
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  align-items: center;
-  justify-content: center;
-}
-
-.panel-row-move-btn {
   width: 14px;
-  height: 14px;
-  padding: 0;
+}
+
+.panel-row-grip {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 8px;
-  line-height: 1;
   color: #94a3b8;
+  cursor: grab;
+  padding: 0;
   background: none;
   border: none;
-  cursor: pointer;
 }
 
-.panel-row-move-btn:hover:not(:disabled) {
-  color: #64748b;
+.panel-row-grip:active {
+  cursor: grabbing;
 }
 
-.panel-row-move-btn:disabled {
-  opacity: 0.35;
-  cursor: default;
+.panel-row-dragging {
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: grabbing;
+  z-index: 1;
 }
 
 .panel-row-header {
