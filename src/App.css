@@ -631,7 +631,7 @@
   flex: 1;
   min-width: 0;
   height: 100vh;
-  overflow: hidden;
+  overflow-y: auto;
   background: var(--bg);
   padding: 8px;
   display: flex;
@@ -796,12 +796,11 @@
 }
 
 .main {
-  flex: 1;
+  flex: 0 0 auto;
   min-width: 0;
-  min-height: 0;
+  min-height: min-content;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
 }
 
 /* Income section */
