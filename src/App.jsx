@@ -1,4 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth, UserButton } from '@clerk/clerk-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import {
   DndContext,
@@ -1064,6 +1066,8 @@ function getCurrentMonthKey() {
 }
 
 function App() {
+  const { isLoaded, isSignedIn } = useAuth();
+  const navigate = useNavigate();
   const [planners, setPlanners] = useState(() => getInitialPlanners());
   const [activePlannerId, setActivePlannerId] = useState(() => {
     const initial = getInitialPlanners();
@@ -1094,6 +1098,12 @@ function App() {
       return true;
     }
   });
+
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      navigate('/sign-in', { replace: true });
+    }
+  }, [isLoaded, isSignedIn, navigate]);
 
   useEffect(() => {
     try {
@@ -1737,6 +1747,18 @@ function App() {
     );
   }
 
+  if (!isLoaded) {
+    return (
+      <div className="app" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f0f0f' }}>
+        <div style={{ width: 40, height: 40, border: '3px solid #2a2a2a', borderTopColor: '#c9a84c', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      </div>
+    );
+  }
+
+  if (!isSignedIn) {
+    return null;
+  }
+
   return (
     <div className="app">
       <aside className="sidebar">
@@ -1846,6 +1868,7 @@ function App() {
               </span>
             </div>
             <div className="header-actions">
+              <UserButton afterSignOutUrl="/" />
               <button
                 type="button"
                 className="save-btn"

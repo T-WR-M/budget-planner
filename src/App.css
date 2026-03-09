@@ -755,6 +755,12 @@ html::-webkit-scrollbar-thumb:hover,
   border-left: 4px solid var(--bills);
 }
 
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @keyframes saveToastFade {
   0%, 70% { opacity: 1; }
   100% { opacity: 0; }

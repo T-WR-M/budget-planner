@@ -6,6 +6,37 @@
   font-family: 'DM Sans', sans-serif;
 }
 
+.landing-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+
+.landing-header-brand {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #c9a84c;
+}
+
+.landing-header-signin {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #888888;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.landing-header-signin:hover {
+  color: #c9a84c;
+}
+
 /* Hero */
 .landing-hero {
   min-height: 85vh;

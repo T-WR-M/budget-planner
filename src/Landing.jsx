@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import './Landing.css';
 
 const PROFESSIONS = [
@@ -82,6 +82,11 @@ export default function Landing() {
     <div className="landing">
       <style>{`html { scroll-behavior: smooth; }`}</style>
 
+      <header className="landing-header">
+        <span className="landing-header-brand">BudgetFlow</span>
+        <Link to="/sign-in" className="landing-header-signin">Sign In</Link>
+      </header>
+
       {/* Hero */}
       <section className="landing-hero">
         <div className="landing-hero-glow" aria-hidden />
@@ -90,7 +95,7 @@ export default function Landing() {
           The budgeting tool built for real people with real incomes. Track every dollar, plan every month, and finally see where your money goes.
         </p>
         <div className="landing-hero-ctas">
-          <button type="button" className="landing-btn landing-btn-primary" onClick={() => navigate('/app')}>
+          <button type="button" className="landing-btn landing-btn-primary" onClick={() => navigate('/sign-up')}>
             Start Budgeting Free →
           </button>
           <button type="button" className="landing-btn landing-btn-secondary" onClick={scrollToFeatures}>
@@ -168,7 +173,7 @@ export default function Landing() {
               <li className="landing-pricing-no">Annual overview</li>
               <li className="landing-pricing-no">Unlimited line items</li>
             </ul>
-            <button type="button" className="landing-btn landing-btn-outline" onClick={() => navigate('/app')}>
+            <button type="button" className="landing-btn landing-btn-outline" onClick={() => navigate('/sign-up')}>
               Get Started Free
             </button>
           </div>
@@ -184,7 +189,7 @@ export default function Landing() {
               <li className="landing-pricing-yes">Unlimited line items</li>
               <li className="landing-pricing-yes">Priority support</li>
             </ul>
-            <button type="button" className="landing-btn landing-btn-primary" onClick={() => navigate('/app')}>
+            <button type="button" className="landing-btn landing-btn-primary" onClick={() => navigate('/sign-up')}>
               Get Premium — $17
             </button>
           </div>

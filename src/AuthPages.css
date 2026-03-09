@@ -1,0 +1,35 @@
+.auth-page {
+  min-height: 100vh;
+  background: #0f0f0f;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.auth-page-logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #c9a84c;
+  margin: 0 0 1.5rem 0;
+}
+
+.auth-page-clerk {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.auth-page-back {
+  margin-top: 1.5rem;
+  font-size: 0.9375rem;
+  color: #888888;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.auth-page-back:hover {
+  color: #c9a84c;
+}
