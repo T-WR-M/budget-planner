@@ -23,25 +23,25 @@ const PANELS = [
     key: 'bills',
     title: 'Bills',
     accent: '#2563eb',
-    placeholders: ['Rent', 'Utilities', 'Netflix', 'Insurance', 'Phone', 'Internet', 'Streaming', 'Renters insurance', 'Gym', 'Other'],
+    placeholders: ['Rent', 'Utilities', 'Phone', 'Internet', 'Netflix / streaming', 'Car insurance', 'Health insurance', 'Renters insurance'],
   },
   {
     key: 'expenses',
     title: 'Expenses',
     accent: '#f97316',
-    placeholders: ['Groceries', 'Gas', 'Dining', 'Entertainment', 'Clothing', 'Personal care', 'Household', 'Pets', 'Travel', 'Other'],
+    placeholders: ['Groceries', 'Gas', 'Dining out', 'Entertainment', 'Clothing', 'Personal care', 'Household', 'Pets'],
   },
   {
     key: 'debt',
     title: 'Debt',
     accent: '#16a34a',
-    placeholders: ['Credit card', 'Student loans', 'Car payment', 'Medical debt', 'Personal loan', 'Other card', 'Other loan', 'Medical', 'Other', 'Other'],
+    placeholders: ['Car payment', 'Student loans', 'Credit card', 'Medical debt', 'Personal loan', 'Other card', 'Other loan', 'Medical'],
   },
   {
     key: 'savings',
     title: 'Savings & Investments',
     accent: '#7c3aed',
-    placeholders: ['Emergency fund', '401(k)', 'Roth IRA', 'Stocks', 'Sinking fund', 'HSA', 'Other savings', 'Brokerage', 'Savings goal', 'Other'],
+    placeholders: ['Emergency fund', '401(k)', 'Roth IRA', 'Stocks', 'Sinking fund', 'HSA', 'Other savings', 'Brokerage'],
   },
 ];
 
@@ -408,9 +408,25 @@ function loadPlannersFromStorage() {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed) || parsed.length === 0) return null;
     return parsed.map((p) => {
-      if (p.months) return p;
-      const months = buildMonthsEmpty();
-      months.jan = { panels: p.panels || initialPanels() };
+      if (!p.months) {
+        const months = buildMonthsEmpty();
+        months.jan = { panels: p.panels || initialPanels() };
+        return { ...p, months };
+      }
+      const months = {};
+      for (const monthKey of Object.keys(p.months)) {
+        const panels = p.months[monthKey].panels || {};
+        const newPanels = {};
+        for (const panelKey of PANEL_KEYS) {
+          const rows = panels[panelKey] || [];
+          const placeholders = PANELS.find((x) => x.key === panelKey)?.placeholders || [];
+          newPanels[panelKey] = rows.map((row, i) => ({
+            ...row,
+            placeholder: row.placeholder !== undefined && row.placeholder !== null ? row.placeholder : (placeholders[i] || ''),
+          }));
+        }
+        months[monthKey] = { panels: newPanels };
+      }
       return { ...p, months };
     });
   } catch {
