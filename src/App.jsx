@@ -441,7 +441,7 @@ function App() {
 
   const activePlanner = planners.find((p) => p.id === activePlannerId) ?? planners[0];
   const activeMonthData = activePlanner?.months?.[activeMonthKey];
-  const panels = activeMonthData?.panels ?? initialPanels();
+  const panels = activeMonthData?.panels ?? {};
   const income = activePlanner?.income ?? '';
   const isActiveUnsaved = unsavedPlannerIds.includes(activePlannerId);
 
@@ -503,7 +503,7 @@ function App() {
         const currentPanels = active.months[activeMonthKey].panels;
         const newPanels = {
           ...currentPanels,
-          [panelKey]: [...currentPanels[panelKey], createRow(`row-${Date.now()}`, '', '', '')],
+          [panelKey]: [...currentPanels[panelKey], createRow(`row-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`, '', '', '')],
         };
         return prev.map((p) =>
           p.id === activePlannerId
@@ -531,8 +531,8 @@ function App() {
       const newIndex = items.findIndex((item) => String(item.id) === overId);
       if (oldIndex === -1 || newIndex === -1) return prev;
 
-      const newRows = arrayMove(items, oldIndex, newIndex);
-      const newPanels = { ...activePlanner.months[activeMonthKey].panels, [panelKey]: newRows };
+      const newArray = arrayMove(items, oldIndex, newIndex);
+      const newPanels = { ...activePlanner.months[activeMonthKey].panels, [panelKey]: newArray };
       const nextPlanners = prev.map((p) =>
         p.id === activePlannerId
           ? { ...p, months: { ...p.months, [activeMonthKey]: { panels: newPanels } } }
