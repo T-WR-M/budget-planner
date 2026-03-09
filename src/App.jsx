@@ -53,7 +53,22 @@ const OVER_BUDGET_COLOR = '#ef4444';
 
 const MONTH_KEYS = ['annual', 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
 const CALENDAR_MONTH_KEYS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
-const MONTH_LABELS = { annual: '📊 Annual Overview', jan: 'Jan', feb: 'Feb', mar: 'Mar', apr: 'Apr', may: 'May', jun: 'Jun', jul: 'Jul', aug: 'Aug', sep: 'Sep', oct: 'Oct', nov: 'Nov', dec: 'Dec' };
+const SIDEBAR_TAB_KEYS = [...CALENDAR_MONTH_KEYS, 'goals', 'annual'];
+const MONTH_LABELS = { annual: '📊 Annual Overview', goals: '🎯 Goals', jan: 'Jan', feb: 'Feb', mar: 'Mar', apr: 'Apr', may: 'May', jun: 'Jun', jul: 'Jul', aug: 'Aug', sep: 'Sep', oct: 'Oct', nov: 'Nov', dec: 'Dec' };
+
+const GOAL_CATEGORIES = ['Emergency Fund', 'Vacation', 'Car', 'House', 'Education', 'Wedding', 'Retirement', 'Other'];
+const GOAL_CATEGORY_COLORS = {
+  'Emergency Fund': '#3b82f6',
+  'Vacation': '#06b6d4',
+  'Car': '#8b5cf6',
+  'House': '#c9a84c',
+  'Education': '#22c55e',
+  'Wedding': '#ec4899',
+  'Retirement': '#f97316',
+  'Other': '#64748b',
+};
+const GOAL_PRIORITIES = ['High', 'Medium', 'Low'];
+const GOAL_PRIORITY_EMOJI = { High: '🔴', Medium: '🟡', Low: '🟢' };
 const STORAGE_KEY = 'budgetflow-planners';
 const PLANNERS_VERSION = '2';
 const PLANNERS_VERSION_KEY = 'budgetflow-planners-version';
@@ -1000,6 +1015,7 @@ function createPlannerFromTemplate(id, name, template) {
     name,
     income: String(template.income),
     months: buildMonthsWithJanTemplate(template),
+    goals: [],
   };
 }
 
@@ -1009,6 +1025,7 @@ function createEmptyPlanner(id, name, income = '') {
     name,
     income: String(income),
     months: buildMonthsEmpty(),
+    goals: [],
   };
 }
 
@@ -1053,7 +1070,7 @@ function loadPlannersFromStorage() {
         }
         months[monthKey] = { panels: newPanels };
       }
-      return { ...p, months };
+      return { ...p, months, goals: Array.isArray(p.goals) ? p.goals : [] };
     });
   } catch {
     return null;
@@ -1063,6 +1080,35 @@ function loadPlannersFromStorage() {
 function getCurrentMonthKey() {
   const m = new Date().getMonth();
   return MONTH_KEYS[m + 1];
+}
+
+function getGoalEstCompletion(targetAmount, currentSaved, monthlyContribution) {
+  const target = parseFloat(targetAmount) || 0;
+  const saved = parseFloat(currentSaved) || 0;
+  const monthly = parseFloat(monthlyContribution) || 0;
+  const remaining = target - saved;
+  if (remaining <= 0) return { text: '🎉 Goal reached!', isReached: true, monthsLeft: 0 };
+  if (monthly <= 0) return { text: '—', isReached: false, monthsLeft: null };
+  const monthsLeft = Math.ceil(remaining / monthly);
+  const d = new Date();
+  d.setMonth(d.getMonth() + monthsLeft);
+  const monthName = d.toLocaleDateString('en-US', { month: 'long' });
+  const year = d.getFullYear();
+  return { text: `${monthName} ${year}`, isReached: false, monthsLeft };
+}
+
+function createEmptyGoal() {
+  return {
+    id: `goal-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    name: '',
+    category: 'Other',
+    priority: 'Medium',
+    targetAmount: '',
+    currentSaved: '',
+    monthlyContribution: '',
+    targetDate: '',
+    notes: '',
+  };
 }
 
 function App() {
@@ -1098,6 +1144,10 @@ function App() {
       return true;
     }
   });
+  const [goalModalOpen, setGoalModalOpen] = useState(false);
+  const [goalModalEditingId, setGoalModalEditingId] = useState(null);
+  const [goalForm, setGoalForm] = useState(() => createEmptyGoal());
+  const [expandedGoalNotes, setExpandedGoalNotes] = useState({});
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
@@ -1333,6 +1383,96 @@ function App() {
     [editingPlannerName]
   );
 
+  const openAddGoalModal = useCallback(() => {
+    setGoalModalEditingId(null);
+    setGoalForm(createEmptyGoal());
+    setGoalModalOpen(true);
+  }, []);
+
+  const openEditGoalModal = useCallback((goal) => {
+    setGoalModalEditingId(goal.id);
+    setGoalForm({ ...goal });
+    setGoalModalOpen(true);
+  }, []);
+
+  const closeGoalModal = useCallback(() => {
+    setGoalModalOpen(false);
+    setGoalModalEditingId(null);
+  }, []);
+
+  const saveGoalModal = useCallback(() => {
+    const g = goalForm;
+    const name = (g.name || '').trim();
+    if (!name) return;
+    setPlanners((prev) => {
+      const active = prev.find((p) => p.id === activePlannerId);
+      if (!active) return prev;
+      const goals = Array.isArray(active.goals) ? [...active.goals] : [];
+      const payload = {
+        ...g,
+        name,
+        category: GOAL_CATEGORIES.includes(g.category) ? g.category : 'Other',
+        priority: GOAL_PRIORITIES.includes(g.priority) ? g.priority : 'Medium',
+        targetAmount: String(g.targetAmount ?? ''),
+        currentSaved: String(g.currentSaved ?? ''),
+        monthlyContribution: String(g.monthlyContribution ?? ''),
+        targetDate: String(g.targetDate ?? ''),
+        notes: String(g.notes ?? ''),
+      };
+      let nextGoals;
+      if (goalModalEditingId) {
+        nextGoals = goals.map((o) => (o.id === goalModalEditingId ? payload : o));
+      } else {
+        nextGoals = [...goals, { ...payload, id: `goal-${Date.now()}-${Math.random().toString(36).slice(2, 9)}` }];
+      }
+      const next = prev.map((p) => (p.id === activePlannerId ? { ...p, goals: nextGoals } : p));
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch (_) {}
+      return next;
+    });
+    markActiveUnsaved();
+    closeGoalModal();
+  }, [goalForm, goalModalEditingId, activePlannerId, markActiveUnsaved, closeGoalModal]);
+
+  const deleteGoal = useCallback(
+    (goalId) => {
+      setPlanners((prev) => {
+        const next = prev.map((p) => {
+          if (p.id !== activePlannerId) return p;
+          const goals = (p.goals || []).filter((g) => g.id !== goalId);
+          return { ...p, goals };
+        });
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        } catch (_) {}
+        return next;
+      });
+      markActiveUnsaved();
+      if (goalModalEditingId === goalId) closeGoalModal();
+    },
+    [activePlannerId, markActiveUnsaved, goalModalEditingId, closeGoalModal]
+  );
+
+  const updateGoalField = useCallback((goalId, field, value) => {
+    setPlanners((prev) => {
+      const next = prev.map((p) => {
+        if (p.id !== activePlannerId) return p;
+        const goals = (p.goals || []).map((g) => (g.id === goalId ? { ...g, [field]: value } : g));
+        return { ...p, goals };
+      });
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch (_) {}
+      return next;
+    });
+    markActiveUnsaved();
+  }, [activePlannerId, markActiveUnsaved]);
+
+  const toggleGoalNotes = useCallback((goalId) => {
+    setExpandedGoalNotes((prev) => ({ ...prev, [goalId]: !prev[goalId] }));
+  }, []);
+
   const handleDeleteClick = useCallback((e, id) => {
     e.stopPropagation();
     if (planners.length <= 1) return;
@@ -1397,7 +1537,23 @@ function App() {
     }).format(num);
   };
 
+  const isGoalsView = activeMonthKey === 'goals';
   const isAnnualView = activeMonthKey === 'annual';
+  const goals = activePlanner?.goals ?? [];
+  const goalsSummary = goals.reduce(
+    (acc, g) => {
+      const target = parseFloat(g.targetAmount) || 0;
+      const saved = parseFloat(g.currentSaved) || 0;
+      acc.totalTarget += target;
+      acc.totalSaved += saved;
+      return acc;
+    },
+    { totalTarget: 0, totalSaved: 0 }
+  );
+  const goalsOverallPct =
+    goalsSummary.totalTarget > 0
+      ? Math.min(100, Math.round((goalsSummary.totalSaved / goalsSummary.totalTarget) * 100))
+      : 0;
   const monthlyIncomeForAnnual = parseFloat(activePlanner?.income) || 0;
   const annualIncome = monthlyIncomeForAnnual * 12;
   const annualPanelTotals = isAnnualView
@@ -1650,11 +1806,11 @@ function App() {
         </div>
         {isExpanded && (
           <ul className="sidebar-month-tabs">
-            {MONTH_KEYS.map((monthKey) => (
+            {SIDEBAR_TAB_KEYS.map((monthKey) => (
               <li key={monthKey}>
                 <button
                   type="button"
-                  className={`sidebar-month-tab ${planner.id === activePlannerId && activeMonthKey === monthKey ? 'sidebar-month-tab-active' : ''} ${monthKey === 'annual' ? 'sidebar-month-tab-annual' : ''} ${monthKey === 'annual' && !isPremium ? 'sidebar-month-tab-locked' : ''}`}
+                  className={`sidebar-month-tab ${planner.id === activePlannerId && activeMonthKey === monthKey ? 'sidebar-month-tab-active' : ''} ${monthKey === 'annual' ? 'sidebar-month-tab-annual' : ''} ${monthKey === 'goals' ? 'sidebar-month-tab-goals' : ''} ${monthKey === 'annual' && !isPremium ? 'sidebar-month-tab-locked' : ''}`}
                   onClick={(e) => handleSelectMonth(e, planner.id, monthKey)}
                 >
                   {monthKey === 'annual' && !isPremium ? '🔒 ' : ''}{MONTH_LABELS[monthKey]}
@@ -1908,7 +2064,7 @@ function App() {
         )}
 
         <main className="main">
-          {isAnnualView ? (
+          {!isGoalsView && (isAnnualView ? (
             <section className="income-section annual-income-section">
               <div className="income-label">
                 Annual income <span className="income-planner-name">— {activePlanner?.name}</span>
@@ -1935,9 +2091,137 @@ function App() {
                 Remaining balance: <span className={remaining >= 0 ? 'remaining-positive' : 'remaining-negative'}>{formatCurrency(String(remaining))}</span>
               </p>
             </section>
-          )}
+          ))}
 
-        {isAnnualView ? (
+        {isGoalsView ? (
+          <section className="goals-page">
+            <div className="goals-page-header">
+              <div>
+                <h1 className="goals-page-title">Savings Goals</h1>
+                <p className="goals-page-sub">Track your financial goals and see your progress</p>
+              </div>
+              <button type="button" className="goals-add-btn" onClick={openAddGoalModal}>
+                + Add Goal
+              </button>
+            </div>
+            <div className="goals-summary-bar card">
+              <div className="panel-accent" style={{ background: '#c9a84c' }} />
+              <div className="goals-summary-stats">
+                <span className="goals-summary-stat"><strong>{goals.length}</strong> goals</span>
+                <span className="goals-summary-stat">Target: {formatCurrency(String(goalsSummary.totalTarget))}</span>
+                <span className="goals-summary-stat">Saved: {formatCurrency(String(goalsSummary.totalSaved))}</span>
+                <span className="goals-summary-stat">{goalsOverallPct}% overall</span>
+              </div>
+            </div>
+            <div className="goals-grid">
+              {goals.map((goal) => {
+                const target = parseFloat(goal.targetAmount) || 0;
+                const saved = parseFloat(goal.currentSaved) || 0;
+                const pct = target > 0 ? Math.min(100, Math.round((saved / target) * 100)) : 0;
+                const est = getGoalEstCompletion(goal.targetAmount, goal.currentSaved, goal.monthlyContribution);
+                const targetDateMs = goal.targetDate ? new Date(goal.targetDate).getTime() : null;
+                const estDateMs = est.monthsLeft != null ? (() => { const d = new Date(); d.setMonth(d.getMonth() + est.monthsLeft); return d.getTime(); })() : null;
+                const behindSchedule = targetDateMs != null && estDateMs != null && estDateMs > targetDateMs && !est.isReached;
+                const notesExpanded = expandedGoalNotes[goal.id];
+                return (
+                  <div key={goal.id} className="goal-card card">
+                    <div className="panel-accent" style={{ background: '#c9a84c' }} />
+                    <div className="goal-card-actions">
+                      <button type="button" className="goal-card-btn" onClick={() => openEditGoalModal(goal)} title="Edit" aria-label="Edit goal">✎</button>
+                      <button type="button" className="goal-card-btn goal-card-btn-delete" onClick={() => deleteGoal(goal.id)} title="Delete" aria-label="Delete goal">🗑</button>
+                    </div>
+                    <h3 className="goal-card-name">{goal.name || 'Unnamed Goal'}</h3>
+                    <div className="goal-card-badges">
+                      <span className="goal-badge goal-badge-category" style={{ backgroundColor: `${GOAL_CATEGORY_COLORS[goal.category] || GOAL_CATEGORY_COLORS.Other}33`, color: GOAL_CATEGORY_COLORS[goal.category] || GOAL_CATEGORY_COLORS.Other }}>{goal.category}</span>
+                      <span className="goal-badge goal-badge-priority">{GOAL_PRIORITY_EMOJI[goal.priority]} {goal.priority}</span>
+                    </div>
+                    <p className="goal-card-target">Goal: {formatCurrency(String(goal.targetAmount || '0'))}</p>
+                    <div className="goal-card-saved-row">
+                      <label className="goal-card-saved-label">Saved:</label>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        className="goal-card-saved-input"
+                        value={goal.currentSaved}
+                        onChange={(e) => updateGoalField(goal.id, 'currentSaved', e.target.value)}
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                    <div className="goal-card-progress">
+                      <div className="goal-progress-bar">
+                        <div className="goal-progress-fill" style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="goal-progress-pct">{pct}% complete</span>
+                    </div>
+                    <div className="goal-card-monthly">
+                      <label className="goal-card-monthly-label">Monthly:</label>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        className="goal-card-monthly-input"
+                        value={goal.monthlyContribution}
+                        onChange={(e) => updateGoalField(goal.id, 'monthlyContribution', e.target.value)}
+                        placeholder="0"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                    <p className="goal-card-est">
+                      Est. completion: {est.text}
+                      {behindSchedule && <span className="goal-card-behind" title="Behind target date"> ⚠</span>}
+                    </p>
+                    {goal.targetDate && (
+                      <p className="goal-card-target-date">Target date: {new Date(goal.targetDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                    )}
+                    <div className="goal-card-notes">
+                      <button type="button" className="goal-card-notes-toggle" onClick={() => toggleGoalNotes(goal.id)}>
+                        {notesExpanded ? '▼' : '▶'} Notes
+                      </button>
+                      {notesExpanded && (
+                        <p className="goal-card-notes-text">{goal.notes || '—'}</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {goalModalOpen && (
+              <div className="goal-modal-overlay" onClick={closeGoalModal}>
+                <div className="goal-modal card" onClick={(e) => e.stopPropagation()}>
+                  <div className="panel-accent" style={{ background: '#c9a84c' }} />
+                  <h2 className="goal-modal-title">{goalModalEditingId ? 'Edit Goal' : 'Add Goal'}</h2>
+                  <div className="goal-modal-form">
+                    <label>Goal name</label>
+                    <input type="text" value={goalForm.name} onChange={(e) => setGoalForm((f) => ({ ...f, name: e.target.value }))} placeholder="e.g. Emergency Fund" />
+                    <label>Category</label>
+                    <select value={goalForm.category} onChange={(e) => setGoalForm((f) => ({ ...f, category: e.target.value }))}>
+                      {GOAL_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                    <label>Priority</label>
+                    <select value={goalForm.priority} onChange={(e) => setGoalForm((f) => ({ ...f, priority: e.target.value }))}>
+                      {GOAL_PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                    <label>Target amount ($)</label>
+                    <input type="number" inputMode="decimal" value={goalForm.targetAmount} onChange={(e) => setGoalForm((f) => ({ ...f, targetAmount: e.target.value }))} min="0" step="0.01" />
+                    <label>Current saved ($)</label>
+                    <input type="number" inputMode="decimal" value={goalForm.currentSaved} onChange={(e) => setGoalForm((f) => ({ ...f, currentSaved: e.target.value }))} min="0" step="0.01" />
+                    <label>Monthly contribution ($)</label>
+                    <input type="number" inputMode="decimal" value={goalForm.monthlyContribution} onChange={(e) => setGoalForm((f) => ({ ...f, monthlyContribution: e.target.value }))} min="0" step="0.01" />
+                    <label>Target date (optional)</label>
+                    <input type="date" value={goalForm.targetDate} onChange={(e) => setGoalForm((f) => ({ ...f, targetDate: e.target.value }))} />
+                    <label>Notes (optional)</label>
+                    <textarea value={goalForm.notes} onChange={(e) => setGoalForm((f) => ({ ...f, notes: e.target.value }))} rows={3} placeholder="Notes..." />
+                  </div>
+                  <div className="goal-modal-actions">
+                    <button type="button" className="goal-modal-cancel" onClick={closeGoalModal}>Cancel</button>
+                    <button type="button" className="goal-modal-save" onClick={saveGoalModal}>Save</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+        ) : isAnnualView ? (
           totalAnnualActual === 0 ? (
             <section className="annual-placeholder">
               <p className="annual-placeholder-text">No monthly data yet — start filling in your monthly budgets</p>
@@ -2032,6 +2316,33 @@ function App() {
                   );
                 })}
               </section>
+
+              {goals.length > 0 && (
+                <section className="annual-goals-section">
+                  <h2 className="annual-goals-title">Savings Goals Progress</h2>
+                  <div className="annual-goals-list">
+                    {goals.map((goal) => {
+                      const target = parseFloat(goal.targetAmount) || 0;
+                      const saved = parseFloat(goal.currentSaved) || 0;
+                      const pct = target > 0 ? Math.min(100, Math.round((saved / target) * 100)) : 0;
+                      const est = getGoalEstCompletion(goal.targetAmount, goal.currentSaved, goal.monthlyContribution);
+                      return (
+                        <div key={goal.id} className="annual-goal-item card">
+                          <div className="panel-accent" style={{ background: '#c9a84c' }} />
+                          <div className="annual-goal-item-header">
+                            <span className="annual-goal-item-name">{goal.name || 'Unnamed'}</span>
+                            <span className="annual-goal-item-amounts">{formatCurrency(String(saved))} / {formatCurrency(String(goal.targetAmount || '0'))}</span>
+                          </div>
+                          <div className="goal-progress-bar">
+                            <div className="goal-progress-fill" style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className="annual-goal-item-est">Est. {est.text}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
             </>
           )
         ) : (

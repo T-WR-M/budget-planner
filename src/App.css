@@ -333,6 +333,12 @@ html::-webkit-scrollbar-thumb:hover,
   margin-bottom: 0.2rem;
 }
 
+.sidebar-month-tab-goals {
+  color: var(--gold);
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+}
+
 .sidebar-new-btn {
   margin: 0.75rem 1rem 0;
   padding: 0.6rem 0.75rem;
@@ -1305,6 +1311,416 @@ html::-webkit-scrollbar-thumb:hover,
 
 .chart-stat-overbudget .chart-stat-amount {
   color: #ef4444;
+}
+
+/* Goals page */
+.goals-page {
+  padding-bottom: 2rem;
+}
+
+.goals-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.goals-page-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--gold);
+  margin: 0 0 0.25rem 0;
+}
+
+.goals-page-sub {
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.goals-add-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #0f0f0f;
+  background: var(--gold);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.goals-add-btn:hover {
+  background: var(--gold-light);
+  box-shadow: var(--gold-glow);
+}
+
+.goals-summary-bar {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.goals-summary-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.goals-summary-stat {
+  font-size: 0.9375rem;
+  color: var(--text-primary);
+}
+
+.goals-summary-stat strong {
+  color: var(--gold);
+}
+
+.goals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.goal-card {
+  position: relative;
+  padding: 1.25rem;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.goal-card:hover {
+  box-shadow: var(--gold-glow);
+}
+
+.goal-card:hover .goal-card-actions {
+  opacity: 1;
+}
+
+.goal-card-actions {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  gap: 0.35rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.goal-card-btn {
+  padding: 0.25rem 0.4rem;
+  font-size: 0.875rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.goal-card-btn:hover {
+  color: var(--gold);
+  background: var(--gold-subtle);
+}
+
+.goal-card-btn-delete:hover {
+  color: #ef4444;
+}
+
+.goal-card-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem 0;
+  padding-right: 3rem;
+}
+
+.goal-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.goal-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+}
+
+.goal-badge-priority {
+  color: var(--text-secondary);
+}
+
+.goal-card-target {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0 0 0.5rem 0;
+}
+
+.goal-card-saved-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.goal-card-saved-label {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.goal-card-saved-input {
+  flex: 1;
+  max-width: 120px;
+  height: 28px;
+  padding: 0 6px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.goal-card-progress {
+  margin-bottom: 0.75rem;
+}
+
+.goal-progress-bar {
+  height: 8px;
+  background: var(--surface-elevated);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.25rem;
+}
+
+.goal-progress-fill {
+  height: 100%;
+  background: #c9a84c;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.goal-progress-pct {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.goal-card-monthly {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.goal-card-monthly-label {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.goal-card-monthly-input {
+  width: 80px;
+  height: 28px;
+  padding: 0 6px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.goal-card-est {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin: 0 0 0.25rem 0;
+}
+
+.goal-card-behind {
+  color: #f59e0b;
+}
+
+.goal-card-target-date {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 0 0 0.5rem 0;
+}
+
+.goal-card-notes-toggle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  font-family: inherit;
+}
+
+.goal-card-notes-toggle:hover {
+  color: var(--gold);
+}
+
+.goal-card-notes-text {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin: 0.5rem 0 0 0;
+  white-space: pre-wrap;
+}
+
+/* Goal modal */
+.goal-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+}
+
+.goal-modal {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  padding: 1.5rem;
+  overflow: hidden;
+}
+
+.goal-modal-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--gold);
+  margin: 0 0 1rem 0;
+}
+
+.goal-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.goal-modal-form label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.goal-modal-form input,
+.goal-modal-form select,
+.goal-modal-form textarea {
+  padding: 0.5rem 0.6rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.goal-modal-form textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.goal-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.goal-modal-cancel {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--text-secondary);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.goal-modal-cancel:hover {
+  background: var(--gold-subtle);
+  color: var(--gold);
+}
+
+.goal-modal-save {
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #0f0f0f;
+  background: var(--gold);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.goal-modal-save:hover {
+  background: var(--gold-light);
+  box-shadow: var(--gold-glow);
+}
+
+/* Annual overview goals section */
+.annual-goals-section {
+  margin-top: 1.5rem;
+}
+
+.annual-goals-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--gold);
+  margin: 0 0 1rem 0;
+}
+
+.annual-goals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.annual-goal-item {
+  padding: 1rem 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.annual-goal-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.annual-goal-item-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.annual-goal-item-amounts {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.annual-goal-item-est {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  display: block;
 }
 
 @media (min-width: 640px) {
