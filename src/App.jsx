@@ -70,8 +70,90 @@ const GOAL_CATEGORY_COLORS = {
 const GOAL_PRIORITIES = ['High', 'Medium', 'Low'];
 const GOAL_PRIORITY_EMOJI = { High: '🔴', Medium: '🟡', Low: '🟢' };
 const STORAGE_KEY = 'budgetflow-planners';
-const PLANNERS_VERSION = '2';
+const PLANNERS_VERSION = '3';
 const PLANNERS_VERSION_KEY = 'budgetflow-planners-version';
+
+function sumTemplatePlanned(arr) {
+  if (!Array.isArray(arr)) return 0;
+  return arr.reduce((s, r) => s + (Number(r.planned) || 0), 0);
+}
+
+const GOAL3_LOWER_IDS = ['teacher', 'socialWorker', 'personalTrainer', 'military', 'chef'];
+const GOAL3_HIGH_IDS = ['lawyer', 'software', 'pharmacist'];
+
+function getTemplateGoals(template, professionId) {
+  const income = Number(template.income) || 0;
+  const monthlyExpenses =
+    sumTemplatePlanned(template.bills) + sumTemplatePlanned(template.expenses) + sumTemplatePlanned(template.debt);
+  const emergencyTarget = Math.max(1000, Math.round(monthlyExpenses * 4.5));
+  const emergencySaved = Math.round(emergencyTarget * 0.35);
+  const emergencyMonthly = Math.max(50, Math.round(income * 0.05));
+
+  const isHighEarner = GOAL3_HIGH_IDS.includes(professionId);
+  const vacationTarget = isHighEarner ? 5000 : 3000;
+  const vacationSaved = Math.round(vacationTarget * 0.22);
+  const vacationMonthly = isHighEarner ? 200 : 100;
+
+  let goal3;
+  if (GOAL3_LOWER_IDS.includes(professionId)) {
+    goal3 = {
+      name: 'New Car Fund',
+      category: 'Car',
+      priority: 'Medium',
+      targetAmount: 8000,
+      currentSaved: 1000,
+      monthlyContribution: 150,
+      targetDate: '2028-06-01',
+      notes: 'Saving for a reliable used car',
+    };
+  } else if (isHighEarner) {
+    goal3 = {
+      name: 'Investment Portfolio',
+      category: 'Retirement',
+      priority: 'High',
+      targetAmount: 50000,
+      currentSaved: 11250,
+      monthlyContribution: 800,
+      targetDate: '2027-12-01',
+      notes: 'Building a diversified investment portfolio',
+    };
+  } else {
+    goal3 = {
+      name: 'Home Down Payment',
+      category: 'House',
+      priority: 'High',
+      targetAmount: 25000,
+      currentSaved: 4375,
+      monthlyContribution: 300,
+      targetDate: '2028-12-01',
+      notes: 'Saving for a 10% down payment on a home',
+    };
+  }
+
+  return [
+    {
+      name: 'Emergency Fund',
+      category: 'Emergency Fund',
+      priority: 'High',
+      targetAmount: emergencyTarget,
+      currentSaved: emergencySaved,
+      monthlyContribution: emergencyMonthly,
+      targetDate: '2027-09-01',
+      notes: '3-6 months of living expenses for financial security',
+    },
+    {
+      name: 'Vacation Fund',
+      category: 'Vacation',
+      priority: 'Medium',
+      targetAmount: vacationTarget,
+      currentSaved: vacationSaved,
+      monthlyContribution: vacationMonthly,
+      targetDate: '2026-12-01',
+      notes: 'Annual vacation savings fund',
+    },
+    goal3,
+  ];
+}
 
 if (!localStorage.getItem('budgetflow-v2')) {
   localStorage.removeItem('budgetflow-planners');
@@ -1009,13 +1091,25 @@ function buildMonthsEmpty() {
   return months;
 }
 
-function createPlannerFromTemplate(id, name, template) {
+function createPlannerFromTemplate(id, name, template, professionId) {
+  const templateGoals = getTemplateGoals(template, professionId);
+  const goals = templateGoals.map((g, i) => ({
+    id: `goal-${id}-${i}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    name: g.name,
+    category: g.category,
+    priority: g.priority,
+    targetAmount: String(g.targetAmount),
+    currentSaved: String(g.currentSaved),
+    monthlyContribution: String(g.monthlyContribution),
+    targetDate: g.targetDate,
+    notes: g.notes,
+  }));
   return {
     id,
     name,
     income: String(template.income),
     months: buildMonthsWithJanTemplate(template),
-    goals: [],
+    goals,
   };
 }
 
@@ -1032,7 +1126,7 @@ function createEmptyPlanner(id, name, income = '') {
 function getDefaultPlanners() {
   const ids = ['nurse', 'teacher', 'software', 'police', 'electrician', 'lawyer', 'personalTrainer', 'flightAttendant', 'construction', 'pharmacist', 'socialWorker', 'military', 'chef', 'truckDriver', 'accountant', 'physicalTherapist', 'dentalHygienist'];
   const names = ['Nurse', 'Teacher', 'Software Engineer', 'Police Officer', 'Electrician', 'Lawyer', 'Personal Trainer', 'Flight Attendant', 'Construction Worker', 'Pharmacist', 'Social Worker', 'Military', 'Chef / Cook', 'Truck Driver', 'Accountant', 'Physical Therapist', 'Dental Hygienist'];
-  return ids.map((id, i) => createPlannerFromTemplate(`planner-${id}`, names[i], PROFESSION_TEMPLATES[id]));
+  return ids.map((id, i) => createPlannerFromTemplate(`planner-${id}`, names[i], PROFESSION_TEMPLATES[id], id));
 }
 
 function getInitialPlanners() {
