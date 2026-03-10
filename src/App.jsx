@@ -1319,8 +1319,8 @@ function getExamplePlanner() {
 
 function App() {
   const { isLoaded, isSignedIn } = useAuth();
-  const { user } = useUser();
-  const isOwner = user?.primaryEmailAddress?.emailAddress === 'tyler.wr.mcgrath@gmail.com';
+  const { user, isLoaded: userLoaded } = useUser();
+  const isOwner = userLoaded && user?.primaryEmailAddress?.emailAddress === 'tyler.wr.mcgrath@gmail.com';
   const navigate = useNavigate();
   const [planners, setPlanners] = useState(() => getInitialPlanners());
   const [activePlannerId, setActivePlannerId] = useState(() => {
@@ -1342,14 +1342,19 @@ function App() {
   const [plannerToDelete, setPlannerToDelete] = useState(null);
   const [saveMessage, setSaveMessage] = useState(null);
   const [expandedAnnualLineItems, setExpandedAnnualLineItems] = useState({});
-  const [storedIsPremium, setStoredIsPremium] = useState(() => {
+  const [isPremium, setIsPremium] = useState(() => {
     try {
       return localStorage.getItem('budgetflow-premium') === 'true';
     } catch {
       return false;
     }
   });
-  const isPremium = isOwner || storedIsPremium;
+
+  useEffect(() => {
+    if (isOwner) {
+      setIsPremium(true);
+    }
+  }, [isOwner]);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     try {
@@ -2164,7 +2169,7 @@ function App() {
     );
   }
 
-  if (!isLoaded) {
+  if (!isLoaded || !userLoaded) {
     return (
       <div className="app" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f0f0f' }}>
         <div style={{ width: 40, height: 40, border: '3px solid #2a2a2a', borderTopColor: '#c9a84c', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
