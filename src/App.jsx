@@ -2751,10 +2751,11 @@ function App() {
               type="button"
               className="upgrade-modal-cta"
               onClick={() => {
-                const base = import.meta.env.VITE_STRIPE_PAYMENT_LINK || 'YOUR_STRIPE_PAYMENT_LINK';
-                const url = `${base}${base.includes('?') ? '&' : '?'}success_url=${encodeURIComponent(window.location.origin + '/success')}&cancel_url=${encodeURIComponent(window.location.origin + '/cancel')}`;
-                window.open(url, '_blank');
-                setShowUpgradeModal(false);
+                const base = 'https://buy.stripe.com/00wdR3bYY94te5Z5nYffy00';
+                const successUrl = 'https://budget-planner-production.up.railway.app/success';
+                const cancelUrl = 'https://budget-planner-production.up.railway.app/cancel';
+                const url = `${base}?success_url=${encodeURIComponent(successUrl)}&cancel_url=${encodeURIComponent(cancelUrl)}`;
+                window.location.href = url;
               }}
             >
               Get Premium — $17
