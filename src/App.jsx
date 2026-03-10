@@ -1181,13 +1181,24 @@ const PROFESSION_TEMPLATE_LIST = [
   { id: 'dentalHygienist', name: 'Dental Hygienist' },
 ];
 
+function getDefaultPlanners() {
+  return PROFESSION_TEMPLATE_LIST.map(({ id: professionId, name }) => {
+    const template = PROFESSION_TEMPLATES[professionId];
+    if (!template) return null;
+    const id = `planner-${professionId}`;
+    return createPlannerFromTemplate(id, name, template, professionId);
+  }).filter(Boolean);
+}
+
 function getInitialPlanners() {
   if (localStorage.getItem(PLANNERS_VERSION_KEY) !== PLANNERS_VERSION) {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.setItem(PLANNERS_VERSION_KEY, PLANNERS_VERSION);
-    return [];
+    return getDefaultPlanners();
   }
-  return loadPlannersFromStorage() ?? [];
+  const loaded = loadPlannersFromStorage();
+  if (loaded == null || loaded.length === 0) return getDefaultPlanners();
+  return loaded;
 }
 
 const TEMPLATE_PLANNER_ID_PREFIXES = [
