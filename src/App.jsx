@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth, UserButton } from '@clerk/clerk-react';
+import { useAuth, UserButton, useUser } from '@clerk/clerk-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import {
   DndContext,
@@ -1319,6 +1319,8 @@ function getExamplePlanner() {
 
 function App() {
   const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
+  const isOwner = user?.primaryEmailAddress?.emailAddress === 'tyler.wr.mcgrath@gmail.com';
   const navigate = useNavigate();
   const [planners, setPlanners] = useState(() => getInitialPlanners());
   const [activePlannerId, setActivePlannerId] = useState(() => {
@@ -1340,13 +1342,14 @@ function App() {
   const [plannerToDelete, setPlannerToDelete] = useState(null);
   const [saveMessage, setSaveMessage] = useState(null);
   const [expandedAnnualLineItems, setExpandedAnnualLineItems] = useState({});
-  const [isPremium, setIsPremium] = useState(() => {
+  const [storedIsPremium, setStoredIsPremium] = useState(() => {
     try {
       return localStorage.getItem('budgetflow-premium') === 'true';
     } catch {
       return false;
     }
   });
+  const isPremium = isOwner || storedIsPremium;
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     try {
