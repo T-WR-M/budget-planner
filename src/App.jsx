@@ -1323,7 +1323,12 @@ function App() {
   const OWNER_EMAIL = 'tyler.wr.mcgrath@gmail.com';
   const isOwner = isLoaded && user?.primaryEmailAddress?.emailAddress === OWNER_EMAIL;
   const [manualPremium, setManualPremium] = useState(() => localStorage.getItem('budgetflow-premium') === 'true');
-  const isPremium = isOwner || manualPremium;
+  const [isPremium, setIsPremium] = useState(false);
+
+  useEffect(() => {
+    setIsPremium(isOwner || manualPremium);
+  }, [isOwner, manualPremium, isLoaded]);
+
   const navigate = useNavigate();
   const [planners, setPlanners] = useState(() => getInitialPlanners());
   const [activePlannerId, setActivePlannerId] = useState(() => {
