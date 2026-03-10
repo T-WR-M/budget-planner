@@ -24,6 +24,11 @@ const PROFESSIONS = [
 
 const CATEGORY_COLORS = ['#3b82f6', '#f97316', '#22c55e', '#a855f7'];
 
+/** Stripe Payment Link — same tab; /success only after Stripe redirects post-payment */
+const STRIPE_PAYMENT_LINK = import.meta.env.VITE_STRIPE_PAYMENT_LINK || 'https://buy.stripe.com/00wdR3bYY94te5Z5nYffy00';
+const STRIPE_SUCCESS_URL = 'https://budget-planner-production.up.railway.app/success';
+const STRIPE_CANCEL_URL = 'https://budget-planner-production.up.railway.app/cancel';
+
 const FAQ_ITEMS = [
   {
     q: 'Is this a subscription?',
@@ -192,11 +197,10 @@ export default function Landing() {
             <button
               type="button"
               className="landing-btn landing-btn-primary"
-              onClick={() => {
-                const base = 'https://buy.stripe.com/00wdR3bYY94te5Z5nYffy00';
-                const successUrl = 'https://budget-planner-production.up.railway.app/success';
-                const cancelUrl = 'https://budget-planner-production.up.railway.app/cancel';
-                const url = `${base}?success_url=${encodeURIComponent(successUrl)}&cancel_url=${encodeURIComponent(cancelUrl)}`;
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const url = `${STRIPE_PAYMENT_LINK}${STRIPE_PAYMENT_LINK.includes('?') ? '&' : '?'}success_url=${encodeURIComponent(STRIPE_SUCCESS_URL)}&cancel_url=${encodeURIComponent(STRIPE_CANCEL_URL)}`;
                 window.location.href = url;
               }}
             >

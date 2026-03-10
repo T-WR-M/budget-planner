@@ -71,6 +71,11 @@ const GOAL_PRIORITIES = ['High', 'Medium', 'Low'];
 const GOAL_PRIORITY_EMOJI = { High: '🔴', Medium: '🟡', Low: '🟢' };
 const STORAGE_KEY = 'budgetflow-planners';
 
+/** Stripe Payment Link — user reaches /success only after Stripe redirects post-payment */
+const STRIPE_PAYMENT_LINK = import.meta.env.VITE_STRIPE_PAYMENT_LINK || 'https://buy.stripe.com/00wdR3bYY94te5Z5nYffy00';
+const STRIPE_SUCCESS_URL = 'https://budget-planner-production.up.railway.app/success';
+const STRIPE_CANCEL_URL = 'https://budget-planner-production.up.railway.app/cancel';
+
 const HELP_FAQ = [
   { id: 'getting-started', title: 'Getting Started', items: [
     { q: 'How do I set up my first budget planner?', a: 'When you first open BudgetFlow you will see profession templates in the sidebar. Click any profession to load a pre-built budget template, or click "+ New Planner" at the bottom of the sidebar to create a custom planner. Enter your monthly take-home pay in the income field at the top. Then fill in your planned amounts for each category — Bills, Expenses, Debt, and Savings. As the month progresses come back and fill in your actual amounts to track your real spending.' },
@@ -2750,11 +2755,10 @@ function App() {
             <button
               type="button"
               className="upgrade-modal-cta"
-              onClick={() => {
-                const base = 'https://buy.stripe.com/00wdR3bYY94te5Z5nYffy00';
-                const successUrl = 'https://budget-planner-production.up.railway.app/success';
-                const cancelUrl = 'https://budget-planner-production.up.railway.app/cancel';
-                const url = `${base}?success_url=${encodeURIComponent(successUrl)}&cancel_url=${encodeURIComponent(cancelUrl)}`;
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const url = `${STRIPE_PAYMENT_LINK}${STRIPE_PAYMENT_LINK.includes('?') ? '&' : '?'}success_url=${encodeURIComponent(STRIPE_SUCCESS_URL)}&cancel_url=${encodeURIComponent(STRIPE_CANCEL_URL)}`;
                 window.location.href = url;
               }}
             >
