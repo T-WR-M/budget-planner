@@ -1198,6 +1198,10 @@ function getInitialPlanners() {
   }
   const loaded = loadPlannersFromStorage();
   if (loaded == null || loaded.length === 0) return getDefaultPlanners();
+  const hasTemplate = loaded.some((p) =>
+    PROFESSION_TEMPLATE_LIST.some(({ id: professionId }) => String(p.id || '').startsWith(`planner-${professionId}`))
+  );
+  if (!hasTemplate) return [...getDefaultPlanners(), ...loaded];
   return loaded;
 }
 
@@ -2272,24 +2276,6 @@ function App() {
             )}
           </div>
         </div>
-        {isPremium && (
-          <div className="sidebar-templates-wrap">
-            <div className="sidebar-templates-title">Start from template</div>
-            <ul className="sidebar-templates-list">
-              {PROFESSION_TEMPLATE_LIST.map(({ id, name }) => (
-                <li key={id}>
-                  <button
-                    type="button"
-                    className="sidebar-template-tab"
-                    onClick={() => handleCreateFromTemplate(id, name)}
-                  >
-                    {name}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
         {showNewPlannerForm ? (
           <div className="sidebar-new-form">
             <input
