@@ -1199,7 +1199,7 @@ function loadPlannersFromStorage() {
       if (!p.months) {
         const months = buildMonthsEmpty();
         months.jan = { panels: p.panels || initialPanels() };
-        return { ...p, months };
+        return { ...p, months, isUserCreated: p.isUserCreated !== false };
       }
       const months = {};
       for (const monthKey of Object.keys(p.months)) {
@@ -1215,7 +1215,7 @@ function loadPlannersFromStorage() {
         }
         months[monthKey] = { panels: newPanels };
       }
-      return { ...p, months, goals: Array.isArray(p.goals) ? p.goals : [] };
+      return { ...p, months, goals: Array.isArray(p.goals) ? p.goals : [], isUserCreated: p.isUserCreated !== false };
     });
   } catch {
     return null;
@@ -1559,20 +1559,22 @@ function App() {
   }, [activePlannerId]);
 
   const handleNewPlannerOpen = useCallback(() => {
-    if (!isPremium && planners.length >= 1) {
+    const userCreatedCount = planners.filter((p) => p.isUserCreated).length;
+    if (!isPremium && userCreatedCount >= 1) {
       setShowUpgradeModal(true);
       return;
     }
     setShowNewPlannerForm(true);
     setNewPlannerName('');
     setNewPlannerIncome('');
-  }, [isPremium, planners.length]);
+  }, [isPremium, planners]);
 
   const handleNewPlannerCreate = useCallback(() => {
     const name = newPlannerName.trim() || 'My Budget';
     const incomeVal = newPlannerIncome.trim() || '0';
     const id = `planner-${Date.now()}`;
-    setPlanners((prev) => [...prev, createEmptyPlanner(id, name, incomeVal)]);
+    const newPlanner = { ...createEmptyPlanner(id, name, incomeVal), isUserCreated: true };
+    setPlanners((prev) => [...prev, newPlanner]);
     setActivePlannerId(id);
     setActiveMonthKey(isPremium ? getCurrentMonthKey() : 'jan');
     setExpandedPlannerIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
@@ -1586,7 +1588,7 @@ function App() {
     const template = PROFESSION_TEMPLATES[professionId];
     if (!template) return;
     const id = `planner-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    const newPlanner = createPlannerFromTemplate(id, displayName, template, professionId);
+    const newPlanner = { ...createPlannerFromTemplate(id, displayName, template, professionId), isUserCreated: false };
     setPlanners((prev) => [...prev, newPlanner]);
     setActivePlannerId(id);
     setActiveMonthKey('jan');
@@ -2283,10 +2285,10 @@ function App() {
         ) : (
           <button
             type="button"
-            className={`sidebar-new-btn ${!isPremium && planners.length >= 1 ? 'sidebar-new-btn-locked' : ''}`}
+            className={`sidebar-new-btn ${!isPremium && planners.filter((p) => p.isUserCreated).length >= 1 ? 'sidebar-new-btn-locked' : ''}`}
             onClick={handleNewPlannerOpen}
           >
-            {!isPremium && planners.length >= 1 ? '🔒 ' : ''}+ New Planner
+            {!isPremium && planners.filter((p) => p.isUserCreated).length >= 1 ? '🔒 ' : ''}+ New Planner
           </button>
         )}
         <DndContext
@@ -2295,11 +2297,11 @@ function App() {
           onDragEnd={handleDragEnd}
         >
           <SortableContext
-            items={planners.map((p) => p.id)}
+            items={planners.filter((p) => isPremium || p.isUserCreated).map((p) => p.id)}
             strategy={verticalListSortingStrategy}
           >
             <ul className="sidebar-tabs">
-              {planners.map((planner) => (
+              {planners.filter((p) => isPremium || p.isUserCreated).map((planner) => (
                 <SortablePlannerItem key={planner.id} planner={planner} />
               ))}
             </ul>
