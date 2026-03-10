@@ -1095,6 +1095,89 @@ function templateToRows(templateRows, minRows = 8) {
   return base;
 }
 
+// Deterministic variance for seasonal amounts (±pct from base). Seed from month index.
+function varyAmount(baseVal, monthIndex, panelKey, rowIndex) {
+  const num = typeof baseVal === 'number' ? baseVal : parseFloat(String(baseVal)) || 0;
+  if (num === 0) return '';
+  const seed = (monthIndex * 17 + (panelKey.length * 7) + rowIndex) % 19;
+  const pct = 0.9 + (seed / 100);
+  return String(Math.round(num * pct));
+}
+
+const SEASONAL_MONTH_CFG = {
+  jan: { incomeMult: 1.02, utilitiesMult: 1.1, diningMult: 0.9, billsSwap: [{ from: /^Renters insurance$/i, to: 'Gym membership' }], expensesAdd: [] },
+  feb: { incomeMult: 0.98, utilitiesMult: 1.08, diningMult: 0.92, billsSwap: [], expensesAdd: [] },
+  mar: { incomeMult: 1.01, utilitiesMult: 1.0, diningMult: 0.95, billsSwap: [], expensesAdd: [] },
+  apr: { incomeMult: 1.03, utilitiesMult: 0.95, diningMult: 1.0, billsSwap: [], expensesAdd: [] },
+  may: { incomeMult: 1.0, utilitiesMult: 0.9, diningMult: 1.08, billsSwap: [], expensesAdd: ['Travel'] },
+  jun: { incomeMult: 1.02, utilitiesMult: 0.85, diningMult: 1.1, billsSwap: [{ from: /Utilities|Heating/i, to: 'Cooling/AC' }], expensesAdd: ['Vacation'] },
+  jul: { incomeMult: 1.05, utilitiesMult: 0.9, diningMult: 1.12, billsSwap: [{ from: /Utilities|Heating/i, to: 'Cooling/AC' }], expensesAdd: ['Vacation'] },
+  aug: { incomeMult: 1.03, utilitiesMult: 0.92, diningMult: 1.08, billsSwap: [{ from: /Utilities|Heating/i, to: 'Cooling/AC' }], expensesAdd: ['Vacation'] },
+  sep: { incomeMult: 0.99, utilitiesMult: 0.95, diningMult: 1.0, billsSwap: [], expensesAdd: [] },
+  oct: { incomeMult: 1.0, utilitiesMult: 1.0, diningMult: 1.0, billsSwap: [], expensesAdd: ['Clothing'] },
+  nov: { incomeMult: 1.02, utilitiesMult: 1.05, diningMult: 1.1, billsSwap: [], expensesAdd: ['Gifts'] },
+  dec: { incomeMult: 1.04, utilitiesMult: 1.08, diningMult: 1.15, billsSwap: [], expensesAdd: ['Gifts'] },
+};
+
+function applySeasonalToBills(templateBills, monthKey) {
+  let rows = (templateBills || []).filter((r) => r.name !== '' && r.name != null).slice(0, 6);
+  const cfg = SEASONAL_MONTH_CFG[monthKey];
+  if (!cfg || !cfg.billsSwap?.length) return rows;
+  rows = rows.map((r) => {
+    for (const { from, to } of cfg.billsSwap) {
+      if (from.test ? from.test(r.name) : r.name === from) {
+        const mult = monthKey === 'jan' ? 1.1 : monthKey === 'feb' ? 1.08 : 0.9;
+        return { name: to, planned: Math.round((r.planned || 0) * mult) };
+      }
+    }
+    return r;
+  });
+  return rows;
+}
+
+function applySeasonalToExpenses(templateExpenses, monthKey) {
+  let rows = (templateExpenses || []).filter((r) => r.name !== '' && r.name != null).slice(0, 6);
+  const cfg = SEASONAL_MONTH_CFG[monthKey];
+  if (!cfg || !cfg.expensesAdd?.length) return rows;
+  const added = [];
+  for (const add of cfg.expensesAdd) {
+    if (rows.some((r) => r.name === add)) continue;
+    added.push({ name: add, planned: monthKey === 'nov' || monthKey === 'dec' ? 150 : 200 });
+  }
+  rows = [...rows.slice(0, 6 - added.length), ...added].slice(0, 6);
+  return rows;
+}
+
+function buildOneMonthPanels(template, monthKey, baseId, withActuals) {
+  const bills = applySeasonalToBills(template?.bills, monthKey);
+  const expenses = applySeasonalToExpenses(template?.expenses, monthKey);
+  const debt = (template?.debt || []).filter((r) => r.name !== '' && r.name != null).slice(0, 6);
+  const savings = (template?.savings || []).filter((r) => r.name !== '' && r.name != null).slice(0, 6);
+  const monthIndex = CALENDAR_MONTH_KEYS.indexOf(monthKey);
+  const panelRows = (rows, panelKey) =>
+    rows.map((r, i) => {
+      const planned = varyAmount(r.planned, monthIndex, panelKey, i);
+      const actual = withActuals ? varyAmount(r.planned, monthIndex, panelKey, i + 10) : '';
+      return createRow(`${baseId}-${monthKey}-${panelKey}-${i}`, r.name, planned, actual, r.name || '');
+    });
+  return {
+    bills: panelRows(bills, 'bills'),
+    expenses: panelRows(expenses, 'expenses'),
+    debt: panelRows(debt, 'debt'),
+    savings: panelRows(savings, 'savings'),
+  };
+}
+
+function buildMonthsWithFullTemplate(template, baseId) {
+  const months = {};
+  CALENDAR_MONTH_KEYS.forEach((monthKey) => {
+    const withActuals = monthKey === 'jan' || monthKey === 'feb' || monthKey === 'mar';
+    months[monthKey] = { panels: buildOneMonthPanels(template, monthKey, baseId, withActuals) };
+  });
+  months.annual = { panels: initialPanels() };
+  return months;
+}
+
 const initialPanels = () => {
   const panels = {};
   PANEL_KEYS.forEach((key) => {
@@ -1145,7 +1228,7 @@ function createPlannerFromTemplate(id, name, template, professionId) {
     id,
     name,
     income: String(template.income),
-    months: buildMonthsWithJanTemplate(template),
+    months: buildMonthsWithFullTemplate(template, id),
     goals,
     isUserCreated: false,
   };
