@@ -1,0 +1,54 @@
+/* Success / Cancel pages — same premium dark gold aesthetic as app */
+.payment-result-page {
+  min-height: 100vh;
+  background: #0f0f0f;
+  color: #f0f0f0;
+  font-family: 'DM Sans', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.payment-result-card {
+  position: relative;
+  background: #1a1a1a;
+  border: 1px solid #c9a84c;
+  border-radius: 12px;
+  padding: 2.5rem 2rem;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 0 24px rgba(201, 168, 76, 0.15);
+  overflow: hidden;
+}
+
+.payment-result-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #c9a84c;
+}
+
+.payment-result-emoji {
+  font-size: 3rem;
+  margin: 0 0 1rem;
+  line-height: 1;
+}
+
+.payment-result-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #c9a84c;
+  margin: 0 0 0.75rem;
+  letter-spacing: -0.02em;
+}
+
+.payment-result-sub {
+  font-size: 0.9375rem;
+  color: #888888;
+  margin: 0;
+}

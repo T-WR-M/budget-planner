@@ -1300,7 +1300,7 @@ function App() {
   const [expandedPlannerIds, setExpandedPlannerIds] = useState(() => {
     const initial = getInitialPlanners();
     const id = (initial && initial[0]?.id) ?? getDefaultPlanners()[0].id;
-    return [id];
+    return id === EXAMPLE_PLANNER_ID ? [] : [id];
   });
   const [unsavedPlannerIds, setUnsavedPlannerIds] = useState([]);
   const [showNewPlannerForm, setShowNewPlannerForm] = useState(false);
@@ -1311,7 +1311,13 @@ function App() {
   const [plannerToDelete, setPlannerToDelete] = useState(null);
   const [saveMessage, setSaveMessage] = useState(null);
   const [expandedAnnualLineItems, setExpandedAnnualLineItems] = useState({});
-  const [isPremium, setIsPremium] = useState(true); // TODO: set back to false for production
+  const [isPremium, setIsPremium] = useState(() => {
+    try {
+      return localStorage.getItem('budgetflow-premium') === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     try {
@@ -1328,6 +1334,15 @@ function App() {
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [helpSearch, setHelpSearch] = useState('');
   const [helpOpenSection, setHelpOpenSection] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    if (isPremium) {
+      try {
+        localStorage.setItem('budgetflow-premium', 'true');
+      } catch (_) {}
+    }
+  }, [isPremium]);
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
@@ -1372,6 +1387,7 @@ function App() {
     setActivePlannerId(plannerId);
     setActiveMonthKey(monthKey);
     setEditingPlannerId(null);
+    setSidebarOpen(false);
   }, [isPremium]);
 
   const markActiveUnsaved = useCallback(() => {
@@ -2104,58 +2120,76 @@ function App() {
 
   return (
     <div className="app">
-      <aside className="sidebar">
+      {sidebarOpen && (
+        <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} aria-hidden="true" />
+      )}
+      <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
+        <button
+          type="button"
+          className="sidebar-close-btn"
+          onClick={() => setSidebarOpen(false)}
+          aria-label="Close menu"
+        >
+          ×
+        </button>
         <h2 className="sidebar-title">
           My Planners
           {isPremium && <span className="sidebar-premium-badge">Premium ✨</span>}
         </h2>
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={planners.map((p) => p.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <ul className="sidebar-tabs">
-              {planners.map((planner) => (
-                <SortablePlannerItem key={planner.id} planner={planner} />
-              ))}
-            </ul>
-          </SortableContext>
-        </DndContext>
         <div className="sidebar-example-wrap">
-          <button
-            type="button"
-            className={`sidebar-example-tab ${activePlannerId === EXAMPLE_PLANNER_ID ? 'sidebar-tab-active' : ''}`}
-            onClick={() => {
-              setActivePlannerId(EXAMPLE_PLANNER_ID);
-              setExpandedPlannerIds((prev) => (prev.includes(EXAMPLE_PLANNER_ID) ? prev : [...prev, EXAMPLE_PLANNER_ID]));
-            }}
-          >
-            <span className="sidebar-example-icon">📋</span>
-            <span className="sidebar-example-label">Example Budget</span>
-            <span className="sidebar-example-badge">Reference</span>
-          </button>
-          {activePlannerId === EXAMPLE_PLANNER_ID && (
-            <ul className="sidebar-month-tabs">
-              {SIDEBAR_TAB_KEYS.map((monthKey) => (
-                <li key={monthKey}>
-                  <button
-                    type="button"
-                    className={`sidebar-month-tab ${activeMonthKey === monthKey ? 'sidebar-month-tab-active' : ''} ${monthKey === 'annual' ? 'sidebar-month-tab-annual' : ''} ${monthKey === 'goals' ? 'sidebar-month-tab-goals' : ''}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActiveMonthKey(monthKey);
-                    }}
-                  >
-                    {MONTH_LABELS[monthKey]}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+          <div className="sidebar-planner-wrap">
+            <div
+              className={`sidebar-tab ${activePlannerId === EXAMPLE_PLANNER_ID ? 'sidebar-tab-active' : ''}`}
+              onClick={() => {
+                setExpandedPlannerIds((prev) => (prev.includes(EXAMPLE_PLANNER_ID) ? prev.filter((x) => x !== EXAMPLE_PLANNER_ID) : [...prev, EXAMPLE_PLANNER_ID]));
+              }}
+            >
+              <span className="sidebar-drag-handle sidebar-example-drag-spacer" aria-hidden>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="9" cy="6" r="1.5" />
+                  <circle cx="15" cy="6" r="1.5" />
+                  <circle cx="9" cy="12" r="1.5" />
+                  <circle cx="15" cy="12" r="1.5" />
+                  <circle cx="9" cy="18" r="1.5" />
+                  <circle cx="15" cy="18" r="1.5" />
+                </svg>
+              </span>
+              <span
+                className={`sidebar-chevron ${expandedPlannerIds.includes(EXAMPLE_PLANNER_ID) ? 'sidebar-chevron-open' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setExpandedPlannerIds((prev) => (prev.includes(EXAMPLE_PLANNER_ID) ? prev.filter((x) => x !== EXAMPLE_PLANNER_ID) : [...prev, EXAMPLE_PLANNER_ID]));
+                }}
+              />
+              <span className="sidebar-tab-dot" />
+              <div className="sidebar-tab-content">
+                <span className="sidebar-tab-name-wrap">
+                  <span className="sidebar-tab-name">Example Budget</span>
+                </span>
+                <span className="sidebar-tab-income">Reference</span>
+              </div>
+            </div>
+            {expandedPlannerIds.includes(EXAMPLE_PLANNER_ID) && (
+              <ul className="sidebar-month-tabs">
+                {SIDEBAR_TAB_KEYS.map((monthKey) => (
+                  <li key={monthKey}>
+                    <button
+                      type="button"
+                      className={`sidebar-month-tab ${activePlannerId === EXAMPLE_PLANNER_ID && activeMonthKey === monthKey ? 'sidebar-month-tab-active' : ''} ${monthKey === 'annual' ? 'sidebar-month-tab-annual' : ''} ${monthKey === 'goals' ? 'sidebar-month-tab-goals' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveMonthKey(monthKey);
+                        setActivePlannerId(EXAMPLE_PLANNER_ID);
+                        setSidebarOpen(false);
+                      }}
+                    >
+                      {MONTH_LABELS[monthKey]}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
         {showNewPlannerForm ? (
           <div className="sidebar-new-form">
@@ -2192,138 +2226,42 @@ function App() {
             {!isPremium && planners.length >= 1 ? '🔒 ' : ''}+ New Planner
           </button>
         )}
-        {plannerToDelete && (
-          <div className="sidebar-delete-overlay" onClick={() => handleDeleteConfirm(false)}>
-            <div className="sidebar-delete-modal" onClick={(e) => e.stopPropagation()}>
-              <p>Delete this planner?</p>
-              <div className="sidebar-delete-actions">
-                <button type="button" className="sidebar-delete-yes" onClick={() => handleDeleteConfirm(true)}>Yes</button>
-                <button type="button" className="sidebar-delete-no" onClick={() => handleDeleteConfirm(false)}>No</button>
-              </div>
-            </div>
-          </div>
-        )}
-        {showUpgradeModal && (
-          <div className="upgrade-modal-overlay" onClick={() => setShowUpgradeModal(false)}>
-            <div className="upgrade-modal" onClick={(e) => e.stopPropagation()}>
-              <h2 className="upgrade-modal-logo">BudgetFlow</h2>
-              <h3 className="upgrade-modal-headline">Unlock BudgetFlow Premium</h3>
-              <p className="upgrade-modal-subheadline">One time payment — yours forever</p>
-              <p className="upgrade-modal-price">$17</p>
-              <ul className="upgrade-modal-features">
-                <li><span className="upgrade-modal-check">✅</span> Unlimited planners</li>
-                <li><span className="upgrade-modal-check">✅</span> Annual overview & reporting</li>
-                <li><span className="upgrade-modal-check">✅</span> Unlimited line items per category</li>
-              </ul>
-              <button
-                type="button"
-                className="upgrade-modal-cta"
-                onClick={() => {
-                  setIsPremium(true);
-                  setShowUpgradeModal(false);
-                }}
-              >
-                Get Premium — $17
-              </button>
-              <button type="button" className="upgrade-modal-later" onClick={() => setShowUpgradeModal(false)}>
-                Maybe later
-              </button>
-            </div>
-          </div>
-        )}
-        {showHelpModal && (
-          <div className="help-modal-overlay" onClick={() => setShowHelpModal(false)}>
-            <div className="help-modal card" onClick={(e) => e.stopPropagation()}>
-              <div className="panel-accent" style={{ background: '#c9a84c' }} />
-              <div className="help-modal-header">
-                <h2 className="help-modal-title"><span className="help-modal-title-icon">?</span> Help Center</h2>
-                <button type="button" className="help-modal-close" onClick={() => setShowHelpModal(false)} aria-label="Close">×</button>
-              </div>
-              <div className="help-modal-search-wrap">
-                <input
-                  type="text"
-                  className="help-modal-search"
-                  placeholder="Search for help... (e.g. 'how to add a planner')"
-                  value={helpSearch}
-                  onChange={(e) => setHelpSearch(e.target.value)}
-                />
-                {helpSearch && (
-                  <button type="button" className="help-modal-search-clear" onClick={() => setHelpSearch('')} aria-label="Clear">×</button>
-                )}
-              </div>
-              <div className="help-modal-pills">
-                {HELP_FAQ.map((sec) => (
-                  <button
-                    key={sec.id}
-                    type="button"
-                    className="help-modal-pill"
-                    onClick={() => {
-                      document.getElementById(`help-section-${sec.id}`)?.scrollIntoView({ behavior: 'smooth' });
-                      setHelpOpenSection(sec.id);
-                    }}
-                  >
-                    {sec.pillLabel || sec.title}
-                  </button>
-                ))}
-              </div>
-              <div className="help-modal-faq">
-                {(() => {
-                  const query = helpSearch.trim().toLowerCase();
-                  const filtered = query
-                    ? HELP_FAQ.map((sec) => ({
-                        ...sec,
-                        items: sec.items.filter((item) =>
-                          item.q.toLowerCase().includes(query) || item.a.toLowerCase().includes(query) || sec.title.toLowerCase().includes(query)
-                        ),
-                      })).filter((sec) => sec.items.length > 0)
-                    : HELP_FAQ;
-                  if (filtered.length === 0) {
-                    return (
-                      <p className="help-modal-no-results">
-                        No results found for &quot;{helpSearch}&quot;. Try different keywords.
-                      </p>
-                    );
-                  }
-                  return filtered.map((section) => (
-                    <div key={section.id} id={`help-section-${section.id}`} className="help-faq-section">
-                      <button
-                        type="button"
-                        className={`help-faq-section-head ${helpOpenSection === section.id ? 'help-faq-section-open' : ''}`}
-                        onClick={() => setHelpOpenSection(helpOpenSection === section.id ? null : section.id)}
-                      >
-                        <span className="help-faq-chevron">{helpOpenSection === section.id ? '▼' : '▶'}</span>
-                        {section.title}
-                      </button>
-                      {helpOpenSection === section.id && (
-                        <div className="help-faq-section-body">
-                          {section.items.map((item, i) => (
-                            <div key={i} className="help-faq-item">
-                              <div className="help-faq-q">{item.q}</div>
-                              <div className="help-faq-a">{item.a}</div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ));
-                })()}
-              </div>
-            </div>
-          </div>
-        )}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={planners.map((p) => p.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <ul className="sidebar-tabs">
+              {planners.map((planner) => (
+                <SortablePlannerItem key={planner.id} planner={planner} />
+              ))}
+            </ul>
+          </SortableContext>
+        </DndContext>
       </aside>
 
       <div className="app-main">
         <header className="header">
           <div className="header-top">
+            <button
+              type="button"
+              className="header-hamburger"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open menu"
+            >
+              ☰
+            </button>
             <div className="header-center">
               <h1 className="app-title">BudgetFlow</h1>
-              <span className="header-context">
-                {activePlanner?.name} — {MONTH_LABELS[activeMonthKey]}
-              </span>
             </div>
             <div className="header-actions">
-              <UserButton afterSignOutUrl="/" />
+              <div className="header-user-btn-wrap">
+                <UserButton afterSignOutUrl="/" />
+              </div>
               <button
                 type="button"
                 className="header-help-btn"
@@ -2346,7 +2284,7 @@ function App() {
                   <polyline points="17 21 17 13 7 13 7 21" />
                   <polyline points="7 3 7 8 15 8" />
                 </svg>
-                Save
+                <span className="save-btn-text">Save</span>
               </button>
               )}
               <button
@@ -2364,7 +2302,12 @@ function App() {
               </button>
             </div>
           </div>
-          <p className="app-tagline">Your monthly budget tracker</p>
+          <div className="header-below">
+            <span className="header-context">
+              {activePlanner?.name} — {MONTH_LABELS[activeMonthKey]}
+            </span>
+            <p className="app-tagline">Your monthly budget tracker</p>
+          </div>
         </header>
 
         {saveMessage && (
@@ -2780,6 +2723,128 @@ function App() {
         )}
         </main>
       </div>
+
+      {plannerToDelete && (
+        <div className="sidebar-delete-overlay" onClick={() => handleDeleteConfirm(false)}>
+          <div className="sidebar-delete-modal" onClick={(e) => e.stopPropagation()}>
+            <p>Delete this planner?</p>
+            <div className="sidebar-delete-actions">
+              <button type="button" className="sidebar-delete-yes" onClick={() => handleDeleteConfirm(true)}>Yes</button>
+              <button type="button" className="sidebar-delete-no" onClick={() => handleDeleteConfirm(false)}>No</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showUpgradeModal && (
+        <div className="upgrade-modal-overlay" onClick={() => setShowUpgradeModal(false)}>
+          <div className="upgrade-modal" onClick={(e) => e.stopPropagation()}>
+            <h2 className="upgrade-modal-logo">BudgetFlow</h2>
+            <h3 className="upgrade-modal-headline">Unlock BudgetFlow Premium</h3>
+            <p className="upgrade-modal-subheadline">One time payment — yours forever</p>
+            <p className="upgrade-modal-price">$17</p>
+            <ul className="upgrade-modal-features">
+              <li><span className="upgrade-modal-check">✅</span> Unlimited planners</li>
+              <li><span className="upgrade-modal-check">✅</span> Annual overview & reporting</li>
+              <li><span className="upgrade-modal-check">✅</span> Unlimited line items per category</li>
+            </ul>
+            <button
+              type="button"
+              className="upgrade-modal-cta"
+              onClick={() => {
+                const base = import.meta.env.VITE_STRIPE_PAYMENT_LINK || 'YOUR_STRIPE_PAYMENT_LINK';
+                const url = `${base}${base.includes('?') ? '&' : '?'}success_url=${encodeURIComponent(window.location.origin + '/success')}&cancel_url=${encodeURIComponent(window.location.origin + '/cancel')}`;
+                window.open(url, '_blank');
+                setShowUpgradeModal(false);
+              }}
+            >
+              Get Premium — $17
+            </button>
+            <button type="button" className="upgrade-modal-later" onClick={() => setShowUpgradeModal(false)}>
+              Maybe later
+            </button>
+          </div>
+        </div>
+      )}
+      {showHelpModal && (
+        <div className="help-modal-overlay" onClick={() => setShowHelpModal(false)}>
+          <div className="help-modal card" onClick={(e) => e.stopPropagation()}>
+            <div className="panel-accent" style={{ background: '#c9a84c' }} />
+            <div className="help-modal-header">
+              <h2 className="help-modal-title"><span className="help-modal-title-icon">?</span> Help Center</h2>
+              <button type="button" className="help-modal-close" onClick={() => setShowHelpModal(false)} aria-label="Close">×</button>
+            </div>
+            <div className="help-modal-search-wrap">
+              <input
+                type="text"
+                className="help-modal-search"
+                placeholder="Search for help... (e.g. 'how to add a planner')"
+                value={helpSearch}
+                onChange={(e) => setHelpSearch(e.target.value)}
+              />
+              {helpSearch && (
+                <button type="button" className="help-modal-search-clear" onClick={() => setHelpSearch('')} aria-label="Clear">×</button>
+              )}
+            </div>
+            <div className="help-modal-pills">
+              {HELP_FAQ.map((sec) => (
+                <button
+                  key={sec.id}
+                  type="button"
+                  className="help-modal-pill"
+                  onClick={() => {
+                    document.getElementById(`help-section-${sec.id}`)?.scrollIntoView({ behavior: 'smooth' });
+                    setHelpOpenSection(sec.id);
+                  }}
+                >
+                  {sec.pillLabel || sec.title}
+                </button>
+              ))}
+            </div>
+            <div className="help-modal-faq">
+              {(() => {
+                const query = helpSearch.trim().toLowerCase();
+                const filtered = query
+                  ? HELP_FAQ.map((sec) => ({
+                      ...sec,
+                      items: sec.items.filter((item) =>
+                        item.q.toLowerCase().includes(query) || item.a.toLowerCase().includes(query) || sec.title.toLowerCase().includes(query)
+                      ),
+                    })).filter((sec) => sec.items.length > 0)
+                  : HELP_FAQ;
+                if (filtered.length === 0) {
+                  return (
+                    <p className="help-modal-no-results">
+                      No results found for &quot;{helpSearch}&quot;. Try different keywords.
+                    </p>
+                  );
+                }
+                return filtered.map((section) => (
+                  <div key={section.id} id={`help-section-${section.id}`} className="help-faq-section">
+                    <button
+                      type="button"
+                      className={`help-faq-section-head ${helpOpenSection === section.id ? 'help-faq-section-open' : ''}`}
+                      onClick={() => setHelpOpenSection(helpOpenSection === section.id ? null : section.id)}
+                    >
+                      <span className="help-faq-chevron">{helpOpenSection === section.id ? '▼' : '▶'}</span>
+                      {section.title}
+                    </button>
+                    {helpOpenSection === section.id && (
+                      <div className="help-faq-section-body">
+                        {section.items.map((item, i) => (
+                          <div key={i} className="help-faq-item">
+                            <div className="help-faq-q">{item.q}</div>
+                            <div className="help-faq-a">{item.a}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ));
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

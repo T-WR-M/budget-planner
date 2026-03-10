@@ -189,7 +189,15 @@ export default function Landing() {
               <li className="landing-pricing-yes">Unlimited line items</li>
               <li className="landing-pricing-yes">Priority support</li>
             </ul>
-            <button type="button" className="landing-btn landing-btn-primary" onClick={() => navigate('/sign-up')}>
+            <button
+              type="button"
+              className="landing-btn landing-btn-primary"
+              onClick={() => {
+                const base = import.meta.env.VITE_STRIPE_PAYMENT_LINK || 'YOUR_STRIPE_PAYMENT_LINK';
+                const url = `${base}${base.includes('?') ? '&' : '?'}success_url=${encodeURIComponent(window.location.origin + '/success')}&cancel_url=${encodeURIComponent(window.location.origin + '/cancel')}`;
+                window.open(url, '_blank');
+              }}
+            >
               Get Premium — $17
             </button>
           </div>

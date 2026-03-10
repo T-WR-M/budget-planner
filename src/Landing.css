@@ -554,6 +554,14 @@
     padding: 2rem 1rem 3rem;
   }
 
+  .landing-hero-title {
+    font-size: clamp(1.75rem, 5vw, 2.5rem);
+  }
+
+  .landing-hero-sub {
+    font-size: 14px;
+  }
+
   .landing-hero-ctas {
     flex-direction: column;
     width: 100%;
@@ -562,16 +570,26 @@
 
   .landing-hero-ctas .landing-btn {
     width: 100%;
+    min-height: 44px;
+    font-size: 14px;
   }
 
   .landing-profession-cards {
-    flex-direction: column;
-    align-items: center;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
   }
 
   .landing-profession-card {
     width: 100%;
-    max-width: 280px;
+    min-width: 0;
+    padding: 1rem;
+  }
+
+  .landing-profession-name,
+  .landing-profession-income,
+  .landing-profession-note {
+    font-size: 14px;
   }
 
   .landing-preview-inner {
@@ -591,6 +609,21 @@
   .landing-pricing-card-premium {
     width: 100%;
     max-width: 340px;
+  }
+
+  .landing-pricing-title,
+  .landing-pricing-features li {
+    font-size: 14px;
+  }
+
+  .landing-faq {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .landing-faq-q,
+  .landing-faq-a {
+    font-size: 14px;
   }
 }
 

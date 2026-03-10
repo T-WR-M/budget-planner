@@ -8,6 +8,8 @@ import App from './App.jsx'
 import Landing from './Landing.jsx'
 import SignInPage from './SignInPage.jsx'
 import SignUpPage from './SignUpPage.jsx'
+import SuccessPage from './SuccessPage.jsx'
+import CancelPage from './CancelPage.jsx'
 
 const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 
@@ -33,6 +35,8 @@ createRoot(document.getElementById('root')).render(
           <Route path="/" element={<Landing />} />
           <Route path="/sign-in" element={<SignInPage />} />
           <Route path="/sign-up" element={<SignUpPage />} />
+          <Route path="/success" element={<SuccessPage />} />
+          <Route path="/cancel" element={<CancelPage />} />
           <Route path="/app" element={<App />} />
         </Routes>
       </BrowserRouter>

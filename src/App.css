@@ -167,6 +167,16 @@ html::-webkit-scrollbar-thumb:hover,
   cursor: grabbing;
 }
 
+.sidebar-example-drag-spacer {
+  visibility: hidden;
+  cursor: default;
+  pointer-events: none;
+}
+
+.sidebar-example-drag-spacer:active {
+  cursor: default;
+}
+
 .sidebar-tab-dragging-dnd {
   background: var(--surface-elevated);
   box-shadow: var(--shadow);
@@ -340,9 +350,9 @@ html::-webkit-scrollbar-thumb:hover,
 }
 
 .sidebar-example-wrap {
-  margin-top: auto;
   padding-top: 0.5rem;
   border-top: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
 .sidebar-example-tab {
@@ -499,15 +509,20 @@ html::-webkit-scrollbar-thumb:hover,
 
 .sidebar-delete-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background: rgba(0, 0, 0, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 9999;
 }
 
 .sidebar-delete-modal {
+  position: relative;
+  z-index: 10000;
   background: var(--surface);
   padding: 1.25rem;
   border-radius: 8px;
@@ -559,15 +574,20 @@ html::-webkit-scrollbar-thumb:hover,
 /* Upgrade modal */
 .upgrade-modal-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background: rgba(0, 0, 0, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 200;
+  z-index: 9999;
 }
 
 .upgrade-modal {
+  position: relative;
+  z-index: 10000;
   background: #111111;
   border-radius: 8px;
   padding: 2rem 2.25rem;
@@ -842,6 +862,19 @@ html::-webkit-scrollbar-thumb:hover,
   height: 2px;
   background: var(--gold);
   opacity: 0.6;
+}
+
+.header-below {
+  text-align: center;
+  margin-top: 0.15rem;
+}
+
+.header-below .header-context {
+  display: block;
+}
+
+.header-below .app-tagline {
+  margin-top: 0.25rem;
 }
 
 .app-tagline {
@@ -1627,17 +1660,21 @@ html::-webkit-scrollbar-thumb:hover,
 /* Goal modal */
 .goal-modal-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 9999;
   padding: 1rem;
 }
 
 .goal-modal {
   position: relative;
+  z-index: 10000;
   width: 100%;
   max-width: 420px;
   padding: 1.5rem;
@@ -1832,12 +1869,15 @@ html::-webkit-scrollbar-thumb:hover,
 
 .help-modal-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background: rgba(0, 0, 0, 0.75);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 9999;
   padding: 1rem;
   animation: helpModalFadeIn 0.2s ease;
 }
@@ -1849,6 +1889,7 @@ html::-webkit-scrollbar-thumb:hover,
 
 .help-modal {
   position: relative;
+  z-index: 10000;
   width: 100%;
   max-width: 700px;
   max-height: 90vh;
@@ -2048,5 +2089,443 @@ html::-webkit-scrollbar-thumb:hover,
 @media (min-width: 640px) {
   .app-title {
     font-size: 2rem;
+  }
+}
+
+/* Hamburger and sidebar close: only on mobile */
+.header-hamburger {
+  display: none;
+}
+
+.sidebar-close-btn {
+  display: none;
+}
+
+/* ========== Mobile (under 768px) ========== */
+@media (max-width: 768px) {
+  .app {
+    overflow-x: hidden;
+  }
+
+  /* Sidebar: hidden by default, overlay when open */
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 10001;
+    width: min(85vw, 300px);
+    max-width: 300px;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease-out;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+  }
+
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  .sidebar .sidebar-title {
+    padding-right: 2.5rem;
+  }
+
+  .header-hamburger {
+    display: flex;
+  }
+
+  .sidebar-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 44px;
+    min-height: 44px;
+    padding: 0;
+    font-size: 1.5rem;
+    line-height: 1;
+    font-family: inherit;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: color 0.2s ease, background 0.2s ease;
+  }
+
+  .sidebar-close-btn:hover {
+    color: var(--text-primary);
+    background: var(--gold-subtle);
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    cursor: pointer;
+  }
+
+  /* Header: single row — hamburger left, title centered, buttons right */
+  .header {
+    padding: 8px;
+  }
+
+  .header-top {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+
+  .header-hamburger {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    font-size: 1.25rem;
+    font-family: inherit;
+    color: var(--gold);
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .header-hamburger:hover {
+    background: var(--gold-subtle);
+    box-shadow: var(--gold-glow);
+  }
+
+  .header-center {
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .header-center .app-title {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .header-actions {
+    position: static;
+    transform: none;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .header-context {
+    font-size: 11px;
+  }
+
+  .header-below {
+    margin-top: 4px;
+  }
+
+  .header-below .header-context,
+  .header-below .app-tagline {
+    display: block;
+    font-size: 11px;
+    margin: 0;
+    line-height: 1.3;
+  }
+
+  .header-below .app-tagline {
+    margin-top: 2px;
+  }
+
+  .app-title {
+    font-size: 22px;
+  }
+
+  .app-title::after {
+    width: 40px;
+  }
+
+  /* Save: icon only on mobile */
+  .save-btn .save-btn-text {
+    display: none;
+  }
+
+  .save-btn {
+    min-height: 36px;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .theme-toggle-btn,
+  .header-help-btn {
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+  }
+
+  .header-user-btn-wrap {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .header-user-btn-wrap .cl-userButtonBox {
+    width: 36px;
+    height: 36px;
+  }
+
+  .header-user-btn-wrap .cl-userButtonTrigger {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+  }
+
+  /* Main: full width */
+  .app-main {
+    width: 100%;
+    padding: 6px;
+  }
+
+  .main {
+    min-width: 0;
+  }
+
+  /* Income full width */
+  .income-section {
+    margin-bottom: 6px;
+  }
+
+  .income-input {
+    max-width: none;
+    width: 100%;
+    font-size: 1rem;
+    min-height: 44px;
+    padding: 0.6rem 0.75rem;
+  }
+
+  .income-label,
+  .remaining-balance {
+    font-size: 14px;
+  }
+
+  /* Chart: donut on top, stats 2x3 grid */
+  .chart-section {
+    margin: 6px 0;
+  }
+
+  .chart-card {
+    flex-direction: column;
+    max-height: none;
+    padding: 1rem;
+  }
+
+  .chart-wrapper {
+    flex: 0 0 auto;
+    width: 180px;
+    height: 160px;
+    margin: 0 auto;
+  }
+
+  .chart-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: auto auto auto;
+    gap: 0.5rem 0.75rem;
+    justify-content: center;
+  }
+
+  .chart-stat-block {
+    justify-content: flex-start;
+  }
+
+  .chart-stat-name {
+    font-size: 12px;
+  }
+
+  .chart-stat-amount {
+    font-size: 14px;
+  }
+
+  .chart-stat-pct {
+    font-size: 12px;
+  }
+
+  /* Panels: single column stack */
+  .panels-section {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .budget-panel {
+    padding: 10px;
+    min-width: 0;
+  }
+
+  .panel-title {
+    font-size: 14px;
+  }
+
+  .panel-row,
+  .panel-row-header {
+    min-height: 36px;
+    height: auto;
+  }
+
+  .panel-row-header {
+    min-height: 32px;
+  }
+
+  .panel-row-header .row-label,
+  .panel-row-header .row-planned,
+  .panel-row-header .row-actual {
+    font-size: 11px;
+  }
+
+  .row-input {
+    font-size: 14px;
+    min-height: 36px;
+    padding: 0 6px;
+  }
+
+  .row-name {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .row-amount,
+  .row-planned,
+  .row-actual {
+    flex: 0 0 70px;
+    width: 70px;
+  }
+
+  .panel-row-grip,
+  .panel-row-grip-spacer {
+    width: 12px;
+  }
+
+  .panel-row-delete,
+  .panel-row-delete-spacer {
+    width: 24px;
+  }
+
+  .panel-row-delete {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .add-row-btn {
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+    font-size: 14px;
+  }
+
+  .panel-total-actual {
+    font-size: 16px;
+  }
+
+  .panel-total-planned,
+  .panel-total-pct-large {
+    font-size: 12px;
+  }
+
+  /* Goals page */
+  .goals-page {
+    padding-bottom: 1.5rem;
+  }
+
+  .goals-page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .goals-page-title {
+    font-size: 1.5rem;
+  }
+
+  .goals-page-sub {
+    font-size: 14px;
+  }
+
+  .goals-add-btn {
+    min-height: 44px;
+    font-size: 14px;
+  }
+
+  .goals-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .goal-card {
+    padding: 1rem;
+  }
+
+  .goal-card-name {
+    font-size: 1.125rem;
+  }
+
+  .goal-card-target,
+  .goal-card-saved-label,
+  .goal-card-monthly-label,
+  .goal-card-est,
+  .goal-card-notes-toggle,
+  .goal-card-notes-text {
+    font-size: 14px;
+  }
+
+  .goal-card-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+
+  /* General: min 14px font, no horizontal scroll */
+  .app-main,
+  .main {
+    overflow-x: hidden;
+  }
+
+  .example-banner-text,
+  .example-banner-btn {
+    font-size: 14px;
+  }
+
+  .example-banner-btn {
+    min-height: 44px;
+  }
+
+  /* Annual view mobile */
+  .annual-panels-section {
+    grid-template-columns: 1fr;
+  }
+
+  .annual-income-value {
+    font-size: 1.125rem;
+  }
+
+  .annual-placeholder-text {
+    font-size: 14px;
   }
 }
