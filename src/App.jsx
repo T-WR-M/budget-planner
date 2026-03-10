@@ -2200,6 +2200,36 @@ function App() {
       isDragging,
     } = useSortable({ id });
 
+    const [localName, setLocalName] = useState(row.name);
+    const [localPlanned, setLocalPlanned] = useState(row.planned);
+    const [localActual, setLocalActual] = useState(row.actual);
+
+    useEffect(() => {
+      setLocalName(row.name);
+    }, [row.name]);
+    useEffect(() => {
+      setLocalPlanned(row.planned);
+    }, [row.planned]);
+    useEffect(() => {
+      setLocalActual(row.actual);
+    }, [row.actual]);
+
+    const commitName = useCallback(() => {
+      if (String(localName) !== String(row.name)) {
+        updateRow(panelKey, row.id, 'name', localName);
+      }
+    }, [panelKey, row.id, row.name, localName]);
+    const commitPlanned = useCallback(() => {
+      if (String(localPlanned) !== String(row.planned)) {
+        updateRow(panelKey, row.id, 'planned', localPlanned);
+      }
+    }, [panelKey, row.id, row.planned, localPlanned]);
+    const commitActual = useCallback(() => {
+      if (String(localActual) !== String(row.actual)) {
+        updateRow(panelKey, row.id, 'actual', localActual);
+      }
+    }, [panelKey, row.id, row.actual, localActual]);
+
     const style = {
       transform: CSS.Transform.toString(transform),
       transition,
@@ -2230,8 +2260,15 @@ function App() {
           type="text"
           className="row-input row-name"
           placeholder={row.placeholder || 'Item'}
-          value={row.name}
-          onChange={(e) => updateRow(panelKey, row.id, 'name', e.target.value)}
+          value={localName}
+          onChange={(e) => setLocalName(e.target.value)}
+          onBlur={commitName}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              commitName();
+              e.target.blur();
+            }
+          }}
           readOnly={readOnly}
         />
         <input
@@ -2239,8 +2276,15 @@ function App() {
           inputMode="decimal"
           className="row-input row-amount"
           placeholder="0"
-          value={row.planned}
-          onChange={(e) => updateRow(panelKey, row.id, 'planned', e.target.value)}
+          value={localPlanned}
+          onChange={(e) => setLocalPlanned(e.target.value)}
+          onBlur={commitPlanned}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              commitPlanned();
+              e.target.blur();
+            }
+          }}
           min="0"
           step="0.01"
           readOnly={readOnly}
@@ -2250,8 +2294,15 @@ function App() {
           inputMode="decimal"
           className="row-input row-amount"
           placeholder="0"
-          value={row.actual}
-          onChange={(e) => updateRow(panelKey, row.id, 'actual', e.target.value)}
+          value={localActual}
+          onChange={(e) => setLocalActual(e.target.value)}
+          onBlur={commitActual}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              commitActual();
+              e.target.blur();
+            }
+          }}
           min="0"
           step="0.01"
           readOnly={readOnly}
