@@ -107,7 +107,7 @@ const HELP_FAQ = [
     { q: 'Can I use BudgetFlow on multiple devices?', a: 'Currently your data is stored locally so it does not sync between devices. Cloud sync across devices is on our roadmap for a future update.' },
   ]},
 ];
-const PLANNERS_VERSION = '4';
+const PLANNERS_VERSION = '5';
 const PLANNERS_VERSION_KEY = 'budgetflow-planners-version';
 
 function sumTemplatePlanned(arr) {
@@ -1154,12 +1154,15 @@ function buildOneMonthPanels(template, monthKey, baseId, withActuals) {
   const debt = (template?.debt || []).filter((r) => r.name !== '' && r.name != null).slice(0, 6);
   const savings = (template?.savings || []).filter((r) => r.name !== '' && r.name != null).slice(0, 6);
   const monthIndex = CALENDAR_MONTH_KEYS.indexOf(monthKey);
+  const nonZeroFilter = (r) => r.planned && r.planned !== '0' && r.planned !== '' && Number(r.planned) > 0;
   const panelRows = (rows, panelKey) =>
-    rows.map((r, i) => {
-      const planned = varyAmount(r.planned, monthIndex, panelKey, i);
-      const actual = withActuals ? varyAmount(r.planned, monthIndex, panelKey, i + 10) : '';
-      return createRow(`${baseId}-${monthKey}-${panelKey}-${i}`, r.name, planned, actual, r.name || '');
-    });
+    rows
+      .map((r, i) => {
+        const planned = varyAmount(r.planned, monthIndex, panelKey, i);
+        const actual = '';
+        return createRow(`${baseId}-${monthKey}-${panelKey}-${i}`, r.name, planned, actual, r.name || '');
+      })
+      .filter(nonZeroFilter);
   return {
     bills: panelRows(bills, 'bills'),
     expenses: panelRows(expenses, 'expenses'),
@@ -1189,10 +1192,10 @@ const initialPanels = () => {
 
 function buildMonthsWithJanTemplate(template, baseId) {
   const months = {};
-  const janPanels = buildOneMonthPanels(template, 'jan', baseId || 'planner', true);
+  const janPanels = buildOneMonthPanels(template, 'jan', baseId || 'planner', false);
   months.jan = { panels: janPanels };
   ['feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].forEach((m) => {
-    const withActuals = m === 'feb' || m === 'mar';
+    const withActuals = false;
     months[m] = { panels: buildOneMonthPanels(template, m, baseId || 'planner', withActuals) };
   });
   months.annual = { panels: initialPanels() };
