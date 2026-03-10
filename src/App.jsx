@@ -1398,6 +1398,11 @@ function App() {
   const income = activePlanner?.income ?? '';
   const isActiveUnsaved = unsavedPlannerIds.includes(activePlannerId);
 
+  const sidebarPlanners = planners.filter((p) => p.isUserCreated || isPremium);
+  console.log('planners:', planners.map((p) => ({ id: p.id, name: p.name, isUserCreated: p.isUserCreated })));
+  console.log('isPremium:', isPremium);
+  console.log('filtered:', sidebarPlanners.map((p) => p.name));
+
   const togglePlannerExpanded = useCallback((e, id) => {
     e.stopPropagation();
     setExpandedPlannerIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -1537,9 +1542,12 @@ function App() {
   }, []);
 
   const handleSave = useCallback(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(planners));
+    } catch (_) {}
     setUnsavedPlannerIds((prev) => prev.filter((id) => id !== activePlannerId));
     setSaveMessage('saved');
-  }, [activePlannerId]);
+  }, [activePlannerId, planners]);
 
   useEffect(() => {
     if (saveMessage === null) return;
@@ -2297,11 +2305,11 @@ function App() {
           onDragEnd={handleDragEnd}
         >
           <SortableContext
-            items={planners.filter((p) => isPremium || p.isUserCreated).map((p) => p.id)}
+            items={sidebarPlanners.map((p) => p.id)}
             strategy={verticalListSortingStrategy}
           >
             <ul className="sidebar-tabs">
-              {planners.filter((p) => isPremium || p.isUserCreated).map((planner) => (
+              {sidebarPlanners.map((planner) => (
                 <SortablePlannerItem key={planner.id} planner={planner} />
               ))}
             </ul>
