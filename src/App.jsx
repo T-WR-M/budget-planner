@@ -1574,12 +1574,13 @@ function App() {
     const id = `planner-${Date.now()}`;
     setPlanners((prev) => [...prev, createEmptyPlanner(id, name, incomeVal)]);
     setActivePlannerId(id);
-    setActiveMonthKey(getCurrentMonthKey());
+    setActiveMonthKey(isPremium ? getCurrentMonthKey() : 'jan');
     setExpandedPlannerIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    setUnsavedPlannerIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
     setShowNewPlannerForm(false);
     setNewPlannerName('');
     setNewPlannerIncome('');
-  }, [newPlannerName, newPlannerIncome]);
+  }, [newPlannerName, newPlannerIncome, isPremium]);
 
   const handleCreateFromTemplate = useCallback((professionId, displayName) => {
     const template = PROFESSION_TEMPLATES[professionId];
