@@ -107,7 +107,7 @@ const HELP_FAQ = [
     { q: 'Can I use BudgetFlow on multiple devices?', a: 'Currently your data is stored locally so it does not sync between devices. Cloud sync across devices is on our roadmap for a future update.' },
   ]},
 ];
-const PLANNERS_VERSION = '5';
+const PLANNERS_VERSION = '6';
 const PLANNERS_VERSION_KEY = 'budgetflow-planners-version';
 
 function sumTemplatePlanned(arr) {
@@ -1190,13 +1190,20 @@ const initialPanels = () => {
   return panels;
 };
 
+function getMonthlyIncome(baseIncome, monthIndex) {
+  const variations = [0.97, 0.98, 1.0, 1.01, 1.02, 1.03, 1.04, 1.03, 1.01, 1.0, 0.99, 1.02];
+  return String(Math.round(baseIncome * variations[monthIndex]));
+}
+
 function buildMonthsWithJanTemplate(template, baseId) {
+  const base = Number(template.income) || 0;
   const months = {};
   const janPanels = buildOneMonthPanels(template, 'jan', baseId || 'planner', false);
-  months.jan = { panels: janPanels };
+  months.jan = { panels: janPanels, income: getMonthlyIncome(base, 0) };
   ['feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].forEach((m) => {
     const withActuals = false;
-    months[m] = { panels: buildOneMonthPanels(template, m, baseId || 'planner', withActuals) };
+    const monthIndex = CALENDAR_MONTH_KEYS.indexOf(m);
+    months[m] = { panels: buildOneMonthPanels(template, m, baseId || 'planner', withActuals), income: getMonthlyIncome(base, monthIndex) };
   });
   months.annual = { panels: initialPanels() };
   return months;
@@ -1510,7 +1517,7 @@ function App() {
   const isExamplePlanner = activePlannerId === EXAMPLE_PLANNER_ID;
   const activeMonthData = activePlanner?.months?.[activeMonthKey];
   const panels = activeMonthData?.panels ?? {};
-  const income = activePlanner?.income ?? '';
+  const income = activeMonthData?.income != null && activeMonthData.income !== '' ? activeMonthData.income : (activePlanner?.income ?? '');
   const isActiveUnsaved = unsavedPlannerIds.includes(activePlannerId);
 
   const sidebarPlanners = planners.filter((p) => p.isUserCreated || isPremium);
