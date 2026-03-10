@@ -1190,6 +1190,13 @@ function getInitialPlanners() {
   return loadPlannersFromStorage() ?? [];
 }
 
+const TEMPLATE_PLANNER_ID_PREFIXES = [
+  'planner-nurse', 'planner-teacher', 'planner-software', 'planner-police', 'planner-electrician',
+  'planner-lawyer', 'planner-personalTrainer', 'planner-flightAttendant', 'planner-construction',
+  'planner-pharmacist', 'planner-socialWorker', 'planner-military', 'planner-chef', 'planner-truckDriver',
+  'planner-accountant', 'planner-physicalTherapist', 'planner-dentalHygienist',
+];
+
 function loadPlannersFromStorage() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -1197,10 +1204,12 @@ function loadPlannersFromStorage() {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed) || parsed.length === 0) return null;
     return parsed.map((p) => {
+      const isTemplateById = TEMPLATE_PLANNER_ID_PREFIXES.some((prefix) => String(p.id || '').startsWith(prefix));
+      const isUserCreated = isTemplateById ? false : p.isUserCreated === true;
       if (!p.months) {
         const months = buildMonthsEmpty();
         months.jan = { panels: p.panels || initialPanels() };
-        return { ...p, months, isUserCreated: p.isUserCreated === true };
+        return { ...p, months, isUserCreated };
       }
       const months = {};
       for (const monthKey of Object.keys(p.months)) {
@@ -1216,7 +1225,7 @@ function loadPlannersFromStorage() {
         }
         months[monthKey] = { panels: newPanels };
       }
-      return { ...p, months, goals: Array.isArray(p.goals) ? p.goals : [], isUserCreated: p.isUserCreated === true };
+      return { ...p, months, goals: Array.isArray(p.goals) ? p.goals : [], isUserCreated };
     });
   } catch {
     return null;
