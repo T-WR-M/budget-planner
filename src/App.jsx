@@ -1147,6 +1147,7 @@ function createPlannerFromTemplate(id, name, template, professionId) {
     income: String(template.income),
     months: buildMonthsWithJanTemplate(template),
     goals,
+    isUserCreated: false,
   };
 }
 
@@ -1199,7 +1200,7 @@ function loadPlannersFromStorage() {
       if (!p.months) {
         const months = buildMonthsEmpty();
         months.jan = { panels: p.panels || initialPanels() };
-        return { ...p, months, isUserCreated: p.isUserCreated !== false };
+        return { ...p, months, isUserCreated: p.isUserCreated === true };
       }
       const months = {};
       for (const monthKey of Object.keys(p.months)) {
@@ -1215,7 +1216,7 @@ function loadPlannersFromStorage() {
         }
         months[monthKey] = { panels: newPanels };
       }
-      return { ...p, months, goals: Array.isArray(p.goals) ? p.goals : [], isUserCreated: p.isUserCreated !== false };
+      return { ...p, months, goals: Array.isArray(p.goals) ? p.goals : [], isUserCreated: p.isUserCreated === true };
     });
   } catch {
     return null;
@@ -1399,9 +1400,6 @@ function App() {
   const isActiveUnsaved = unsavedPlannerIds.includes(activePlannerId);
 
   const sidebarPlanners = planners.filter((p) => p.isUserCreated || isPremium);
-  console.log('planners:', planners.map((p) => ({ id: p.id, name: p.name, isUserCreated: p.isUserCreated })));
-  console.log('isPremium:', isPremium);
-  console.log('filtered:', sidebarPlanners.map((p) => p.name));
 
   const togglePlannerExpanded = useCallback((e, id) => {
     e.stopPropagation();
