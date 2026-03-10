@@ -355,6 +355,51 @@ html::-webkit-scrollbar-thumb:hover,
   flex-shrink: 0;
 }
 
+.sidebar-templates-wrap {
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.sidebar-templates-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin: 0 1rem 0.35rem;
+}
+
+.sidebar-templates-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0.5rem 0;
+}
+
+.sidebar-templates-list li {
+  margin: 0 0 0.2rem 0;
+}
+
+.sidebar-template-tab {
+  display: block;
+  width: 100%;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  text-align: left;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-template-tab:hover {
+  color: var(--text-primary);
+  background: var(--gold-subtle);
+}
+
 .sidebar-example-tab {
   display: flex;
   align-items: center;
@@ -591,7 +636,7 @@ html::-webkit-scrollbar-thumb:hover,
   background: #111111;
   border-radius: 8px;
   padding: 2rem 2.25rem;
-  max-width: 380px;
+  max-width: 520px;
   width: 90%;
   box-shadow: var(--shadow);
   border: 1px solid var(--gold);
@@ -627,23 +672,58 @@ html::-webkit-scrollbar-thumb:hover,
 
 .upgrade-modal-price {
   font-family: 'Playfair Display', serif;
-  margin: 0 0 1.5rem;
+  margin: 0 0 1rem;
   font-size: 2.5rem;
   font-weight: 800;
   color: var(--gold);
   letter-spacing: -0.03em;
 }
 
+.upgrade-modal-tiers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.upgrade-modal-tier {
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+}
+
+.upgrade-modal-tier-premium {
+  border-color: var(--gold);
+  background: var(--gold-subtle);
+}
+
+.upgrade-modal-tier-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem;
+}
+
+.upgrade-modal-tier-premium .upgrade-modal-tier-title {
+  color: var(--gold);
+}
+
 .upgrade-modal-features {
   list-style: none;
-  margin: 0 0 1.5rem;
+  margin: 0;
   padding: 0;
   text-align: left;
 }
 
+.upgrade-modal-tier .upgrade-modal-features {
+  margin-bottom: 0;
+}
+
 .upgrade-modal-features li {
-  padding: 0.4rem 0;
-  font-size: 0.9375rem;
+  padding: 0.25rem 0;
+  font-size: 0.8125rem;
   color: var(--text-primary);
   display: flex;
   align-items: center;
@@ -652,6 +732,11 @@ html::-webkit-scrollbar-thumb:hover,
 
 .upgrade-modal-check {
   flex-shrink: 0;
+}
+
+.upgrade-modal-no {
+  flex-shrink: 0;
+  color: var(--text-muted);
 }
 
 .upgrade-modal-cta {
@@ -691,6 +776,12 @@ html::-webkit-scrollbar-thumb:hover,
 
 .upgrade-modal-later:hover {
   color: var(--text-primary);
+}
+
+@media (max-width: 480px) {
+  .upgrade-modal-tiers {
+    grid-template-columns: 1fr;
+  }
 }
 
 .sidebar-delete-no:hover {

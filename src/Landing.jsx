@@ -170,13 +170,13 @@ export default function Landing() {
             <h3 className="landing-pricing-title">Free</h3>
             <p className="landing-pricing-price">$0</p>
             <ul className="landing-pricing-features">
-              <li className="landing-pricing-yes">1 budget planner</li>
-              <li className="landing-pricing-yes">All 4 spending categories</li>
-              <li className="landing-pricing-yes">Live chart breakdown</li>
-              <li className="landing-pricing-yes">Profession templates</li>
-              <li className="landing-pricing-no">Multiple planners</li>
+              <li className="landing-pricing-yes">Example budget reference</li>
+              <li className="landing-pricing-yes">1 planner</li>
+              <li className="landing-pricing-yes">January budget (1 month)</li>
+              <li className="landing-pricing-no">All 12 months</li>
+              <li className="landing-pricing-no">Savings goals tracker</li>
               <li className="landing-pricing-no">Annual overview</li>
-              <li className="landing-pricing-no">Unlimited line items</li>
+              <li className="landing-pricing-no">Multiple planners</li>
             </ul>
             <button type="button" className="landing-btn landing-btn-outline" onClick={() => navigate('/sign-up')}>
               Get Started Free
@@ -189,10 +189,11 @@ export default function Landing() {
             <p className="landing-pricing-sub">One time payment — yours forever</p>
             <ul className="landing-pricing-features">
               <li className="landing-pricing-yes">Everything in Free</li>
-              <li className="landing-pricing-yes">Unlimited planners</li>
+              <li className="landing-pricing-yes">All 12 months per planner</li>
+              <li className="landing-pricing-yes">Savings goals tracker</li>
               <li className="landing-pricing-yes">Annual overview & reporting</li>
+              <li className="landing-pricing-yes">Unlimited planners</li>
               <li className="landing-pricing-yes">Unlimited line items</li>
-              <li className="landing-pricing-yes">Priority support</li>
             </ul>
             <button
               type="button"

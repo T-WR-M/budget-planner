@@ -1160,19 +1160,33 @@ function createEmptyPlanner(id, name, income = '') {
   };
 }
 
-function getDefaultPlanners() {
-  const ids = ['nurse', 'teacher', 'software', 'police', 'electrician', 'lawyer', 'personalTrainer', 'flightAttendant', 'construction', 'pharmacist', 'socialWorker', 'military', 'chef', 'truckDriver', 'accountant', 'physicalTherapist', 'dentalHygienist'];
-  const names = ['Nurse', 'Teacher', 'Software Engineer', 'Police Officer', 'Electrician', 'Lawyer', 'Personal Trainer', 'Flight Attendant', 'Construction Worker', 'Pharmacist', 'Social Worker', 'Military', 'Chef / Cook', 'Truck Driver', 'Accountant', 'Physical Therapist', 'Dental Hygienist'];
-  return ids.map((id, i) => createPlannerFromTemplate(`planner-${id}`, names[i], PROFESSION_TEMPLATES[id], id));
-}
+const PROFESSION_TEMPLATE_LIST = [
+  { id: 'nurse', name: 'Nurse' },
+  { id: 'teacher', name: 'Teacher' },
+  { id: 'software', name: 'Software Engineer' },
+  { id: 'police', name: 'Police Officer' },
+  { id: 'electrician', name: 'Electrician' },
+  { id: 'lawyer', name: 'Lawyer' },
+  { id: 'personalTrainer', name: 'Personal Trainer' },
+  { id: 'flightAttendant', name: 'Flight Attendant' },
+  { id: 'construction', name: 'Construction Worker' },
+  { id: 'pharmacist', name: 'Pharmacist' },
+  { id: 'socialWorker', name: 'Social Worker' },
+  { id: 'military', name: 'Military' },
+  { id: 'chef', name: 'Chef / Cook' },
+  { id: 'truckDriver', name: 'Truck Driver' },
+  { id: 'accountant', name: 'Accountant' },
+  { id: 'physicalTherapist', name: 'Physical Therapist' },
+  { id: 'dentalHygienist', name: 'Dental Hygienist' },
+];
 
 function getInitialPlanners() {
   if (localStorage.getItem(PLANNERS_VERSION_KEY) !== PLANNERS_VERSION) {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.setItem(PLANNERS_VERSION_KEY, PLANNERS_VERSION);
-    return getDefaultPlanners();
+    return [];
   }
-  return loadPlannersFromStorage() ?? getDefaultPlanners();
+  return loadPlannersFromStorage() ?? [];
 }
 
 function loadPlannersFromStorage() {
@@ -1299,12 +1313,12 @@ function App() {
   const [planners, setPlanners] = useState(() => getInitialPlanners());
   const [activePlannerId, setActivePlannerId] = useState(() => {
     const initial = getInitialPlanners();
-    return (initial && initial[0]?.id) ?? getDefaultPlanners()[0].id;
+    return (initial && initial.length > 0 && initial[0]?.id) ? initial[0].id : EXAMPLE_PLANNER_ID;
   });
   const [activeMonthKey, setActiveMonthKey] = useState(() => getCurrentMonthKey());
   const [expandedPlannerIds, setExpandedPlannerIds] = useState(() => {
     const initial = getInitialPlanners();
-    const id = (initial && initial[0]?.id) ?? getDefaultPlanners()[0].id;
+    const id = (initial && initial.length > 0 && initial[0]?.id) ? initial[0].id : EXAMPLE_PLANNER_ID;
     return id === EXAMPLE_PLANNER_ID ? [] : [id];
   });
   const [unsavedPlannerIds, setUnsavedPlannerIds] = useState([]);
@@ -1350,6 +1364,12 @@ function App() {
   }, [isPremium]);
 
   useEffect(() => {
+    if (!isPremium && activeMonthKey !== 'jan') {
+      setActiveMonthKey('jan');
+    }
+  }, [isPremium, activeMonthKey]);
+
+  useEffect(() => {
     if (isLoaded && !isSignedIn) {
       navigate('/sign-in', { replace: true });
     }
@@ -1385,7 +1405,7 @@ function App() {
 
   const handleSelectMonth = useCallback((e, plannerId, monthKey) => {
     if (e) e.stopPropagation();
-    if (monthKey === 'annual' && !isPremium) {
+    if (!isPremium && monthKey !== 'jan') {
       setShowUpgradeModal(true);
       return;
     }
@@ -1560,6 +1580,18 @@ function App() {
     setNewPlannerName('');
     setNewPlannerIncome('');
   }, [newPlannerName, newPlannerIncome]);
+
+  const handleCreateFromTemplate = useCallback((professionId, displayName) => {
+    const template = PROFESSION_TEMPLATES[professionId];
+    if (!template) return;
+    const id = `planner-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const newPlanner = createPlannerFromTemplate(id, displayName, template, professionId);
+    setPlanners((prev) => [...prev, newPlanner]);
+    setActivePlannerId(id);
+    setActiveMonthKey('jan');
+    setExpandedPlannerIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    setSidebarOpen(false);
+  }, []);
 
   const handleNewPlannerCancel = useCallback(() => {
     setShowNewPlannerForm(false);
@@ -2015,10 +2047,10 @@ function App() {
               <li key={monthKey}>
                 <button
                   type="button"
-                  className={`sidebar-month-tab ${planner.id === activePlannerId && activeMonthKey === monthKey ? 'sidebar-month-tab-active' : ''} ${monthKey === 'annual' ? 'sidebar-month-tab-annual' : ''} ${monthKey === 'goals' ? 'sidebar-month-tab-goals' : ''} ${monthKey === 'annual' && !isPremium ? 'sidebar-month-tab-locked' : ''}`}
+                  className={`sidebar-month-tab ${planner.id === activePlannerId && activeMonthKey === monthKey ? 'sidebar-month-tab-active' : ''} ${monthKey === 'annual' ? 'sidebar-month-tab-annual' : ''} ${monthKey === 'goals' ? 'sidebar-month-tab-goals' : ''} ${!isPremium && monthKey !== 'jan' ? 'sidebar-month-tab-locked' : ''}`}
                   onClick={(e) => handleSelectMonth(e, planner.id, monthKey)}
                 >
-                  {monthKey === 'annual' && !isPremium ? '🔒 ' : ''}{MONTH_LABELS[monthKey]}
+                  {!isPremium && monthKey !== 'jan' ? '🔒 ' : ''}{MONTH_LABELS[monthKey]}
                 </button>
               </li>
             ))}
@@ -2176,26 +2208,51 @@ function App() {
             </div>
             {expandedPlannerIds.includes(EXAMPLE_PLANNER_ID) && (
               <ul className="sidebar-month-tabs">
-                {SIDEBAR_TAB_KEYS.map((monthKey) => (
-                  <li key={monthKey}>
-                    <button
-                      type="button"
-                      className={`sidebar-month-tab ${activePlannerId === EXAMPLE_PLANNER_ID && activeMonthKey === monthKey ? 'sidebar-month-tab-active' : ''} ${monthKey === 'annual' ? 'sidebar-month-tab-annual' : ''} ${monthKey === 'goals' ? 'sidebar-month-tab-goals' : ''}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveMonthKey(monthKey);
-                        setActivePlannerId(EXAMPLE_PLANNER_ID);
-                        setSidebarOpen(false);
-                      }}
-                    >
-                      {MONTH_LABELS[monthKey]}
-                    </button>
-                  </li>
-                ))}
+                {SIDEBAR_TAB_KEYS.map((monthKey) => {
+                  const isLocked = !isPremium && monthKey !== 'jan';
+                  return (
+                    <li key={monthKey}>
+                      <button
+                        type="button"
+                        className={`sidebar-month-tab ${activePlannerId === EXAMPLE_PLANNER_ID && activeMonthKey === monthKey ? 'sidebar-month-tab-active' : ''} ${monthKey === 'annual' ? 'sidebar-month-tab-annual' : ''} ${monthKey === 'goals' ? 'sidebar-month-tab-goals' : ''} ${isLocked ? 'sidebar-month-tab-locked' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (isLocked) {
+                            setShowUpgradeModal(true);
+                            return;
+                          }
+                          setActiveMonthKey(monthKey);
+                          setActivePlannerId(EXAMPLE_PLANNER_ID);
+                          setSidebarOpen(false);
+                        }}
+                      >
+                        {isLocked ? '🔒 ' : ''}{MONTH_LABELS[monthKey]}
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
         </div>
+        {isPremium && (
+          <div className="sidebar-templates-wrap">
+            <div className="sidebar-templates-title">Start from template</div>
+            <ul className="sidebar-templates-list">
+              {PROFESSION_TEMPLATE_LIST.map(({ id, name }) => (
+                <li key={id}>
+                  <button
+                    type="button"
+                    className="sidebar-template-tab"
+                    onClick={() => handleCreateFromTemplate(id, name)}
+                  >
+                    {name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         {showNewPlannerForm ? (
           <div className="sidebar-new-form">
             <input
@@ -2747,11 +2804,31 @@ function App() {
             <h3 className="upgrade-modal-headline">Unlock BudgetFlow Premium</h3>
             <p className="upgrade-modal-subheadline">One time payment — yours forever</p>
             <p className="upgrade-modal-price">$17</p>
-            <ul className="upgrade-modal-features">
-              <li><span className="upgrade-modal-check">✅</span> Unlimited planners</li>
-              <li><span className="upgrade-modal-check">✅</span> Annual overview & reporting</li>
-              <li><span className="upgrade-modal-check">✅</span> Unlimited line items per category</li>
-            </ul>
+            <div className="upgrade-modal-tiers">
+              <div className="upgrade-modal-tier upgrade-modal-tier-free">
+                <h4 className="upgrade-modal-tier-title">Free</h4>
+                <ul className="upgrade-modal-features">
+                  <li><span className="upgrade-modal-check">✅</span> Example budget reference</li>
+                  <li><span className="upgrade-modal-check">✅</span> 1 planner</li>
+                  <li><span className="upgrade-modal-check">✅</span> January budget (1 month)</li>
+                  <li><span className="upgrade-modal-no">❌</span> All 12 months</li>
+                  <li><span className="upgrade-modal-no">❌</span> Savings goals tracker</li>
+                  <li><span className="upgrade-modal-no">❌</span> Annual overview</li>
+                  <li><span className="upgrade-modal-no">❌</span> Multiple planners</li>
+                </ul>
+              </div>
+              <div className="upgrade-modal-tier upgrade-modal-tier-premium">
+                <h4 className="upgrade-modal-tier-title">Premium — $17</h4>
+                <ul className="upgrade-modal-features">
+                  <li><span className="upgrade-modal-check">✅</span> Everything in free</li>
+                  <li><span className="upgrade-modal-check">✅</span> All 12 months per planner</li>
+                  <li><span className="upgrade-modal-check">✅</span> Savings goals tracker</li>
+                  <li><span className="upgrade-modal-check">✅</span> Annual overview & reporting</li>
+                  <li><span className="upgrade-modal-check">✅</span> Unlimited planners</li>
+                  <li><span className="upgrade-modal-check">✅</span> Unlimited line items</li>
+                </ul>
+              </div>
+            </div>
             <button
               type="button"
               className="upgrade-modal-cta"
