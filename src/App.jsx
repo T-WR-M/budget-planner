@@ -1318,9 +1318,12 @@ function getExamplePlanner() {
 }
 
 function App() {
-  const { isLoaded, isSignedIn } = useAuth();
-  const { user, isLoaded: userLoaded } = useUser();
-  const isOwner = userLoaded && user?.primaryEmailAddress?.emailAddress === 'tyler.wr.mcgrath@gmail.com';
+  const { isLoaded: authLoaded, isSignedIn } = useAuth();
+  const { user, isLoaded } = useUser();
+  const OWNER_EMAIL = 'tyler.wr.mcgrath@gmail.com';
+  const isOwner = isLoaded && user?.primaryEmailAddress?.emailAddress === OWNER_EMAIL;
+  const [manualPremium, setManualPremium] = useState(() => localStorage.getItem('budgetflow-premium') === 'true');
+  const isPremium = isOwner || manualPremium;
   const navigate = useNavigate();
   const [planners, setPlanners] = useState(() => getInitialPlanners());
   const [activePlannerId, setActivePlannerId] = useState(() => {
@@ -1342,19 +1345,6 @@ function App() {
   const [plannerToDelete, setPlannerToDelete] = useState(null);
   const [saveMessage, setSaveMessage] = useState(null);
   const [expandedAnnualLineItems, setExpandedAnnualLineItems] = useState({});
-  const [isPremium, setIsPremium] = useState(() => {
-    try {
-      return localStorage.getItem('budgetflow-premium') === 'true';
-    } catch {
-      return false;
-    }
-  });
-
-  useEffect(() => {
-    if (isOwner) {
-      setIsPremium(true);
-    }
-  }, [isOwner]);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     try {
@@ -1374,12 +1364,12 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (isPremium) {
+    if (!isOwner) {
       try {
-        localStorage.setItem('budgetflow-premium', 'true');
+        localStorage.setItem('budgetflow-premium', String(manualPremium));
       } catch (_) {}
     }
-  }, [isPremium]);
+  }, [manualPremium, isOwner]);
 
   useEffect(() => {
     if (!isPremium && activeMonthKey !== 'jan') {
@@ -1391,7 +1381,7 @@ function App() {
     if (isLoaded && !isSignedIn) {
       navigate('/sign-in', { replace: true });
     }
-  }, [isLoaded, isSignedIn, navigate]);
+  }, [authLoaded, isSignedIn, navigate]);
 
   useEffect(() => {
     try {
@@ -2169,7 +2159,7 @@ function App() {
     );
   }
 
-  if (!isLoaded || !userLoaded) {
+  if (!authLoaded || !isLoaded) {
     return (
       <div className="app" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f0f0f' }}>
         <div style={{ width: 40, height: 40, border: '3px solid #2a2a2a', borderTopColor: '#c9a84c', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
