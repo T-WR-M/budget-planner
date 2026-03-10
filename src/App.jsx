@@ -107,7 +107,7 @@ const HELP_FAQ = [
     { q: 'Can I use BudgetFlow on multiple devices?', a: 'Currently your data is stored locally so it does not sync between devices. Cloud sync across devices is on our roadmap for a future update.' },
   ]},
 ];
-const PLANNERS_VERSION = '3';
+const PLANNERS_VERSION = '4';
 const PLANNERS_VERSION_KEY = 'budgetflow-planners-version';
 
 function sumTemplatePlanned(arr) {
@@ -1187,17 +1187,13 @@ const initialPanels = () => {
   return panels;
 };
 
-function buildMonthsWithJanTemplate(template) {
+function buildMonthsWithJanTemplate(template, baseId) {
   const months = {};
-  const janPanels = {
-    bills: templateToRows(template?.bills),
-    expenses: templateToRows(template?.expenses),
-    debt: templateToRows(template?.debt),
-    savings: templateToRows(template?.savings),
-  };
+  const janPanels = buildOneMonthPanels(template, 'jan', baseId || 'planner', true);
   months.jan = { panels: janPanels };
   ['feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].forEach((m) => {
-    months[m] = { panels: initialPanels() };
+    const withActuals = m === 'feb' || m === 'mar';
+    months[m] = { panels: buildOneMonthPanels(template, m, baseId || 'planner', withActuals) };
   });
   months.annual = { panels: initialPanels() };
   return months;
@@ -1228,7 +1224,7 @@ function createPlannerFromTemplate(id, name, template, professionId) {
     id,
     name,
     income: String(template.income),
-    months: buildMonthsWithFullTemplate(template, id),
+    months: buildMonthsWithJanTemplate(template, id),
     goals,
     isUserCreated: false,
   };
