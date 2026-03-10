@@ -1326,6 +1326,11 @@ function App() {
   const [isPremium, setIsPremium] = useState(false);
 
   useEffect(() => {
+    console.log('isLoaded:', isLoaded);
+    console.log('user email:', user?.primaryEmailAddress?.emailAddress);
+    console.log('isOwner:', isOwner);
+    console.log('manualPremium:', manualPremium);
+    console.log('setting isPremium to:', isOwner || manualPremium);
     setIsPremium(isOwner || manualPremium);
   }, [isOwner, manualPremium, isLoaded]);
 
@@ -1369,12 +1374,12 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (!isOwner) {
-      try {
-        localStorage.setItem('budgetflow-premium', String(manualPremium));
-      } catch (_) {}
-    }
-  }, [manualPremium, isOwner]);
+    if (!isLoaded) return;
+    if (isOwner) return;
+    try {
+      localStorage.setItem('budgetflow-premium', String(manualPremium));
+    } catch (_) {}
+  }, [manualPremium, isOwner, isLoaded]);
 
   useEffect(() => {
     if (!isPremium && activeMonthKey !== 'jan') {
