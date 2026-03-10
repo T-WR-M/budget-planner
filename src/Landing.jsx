@@ -25,7 +25,7 @@ const PROFESSIONS = [
 const CATEGORY_COLORS = ['#3b82f6', '#f97316', '#22c55e', '#a855f7'];
 
 /** Stripe Payment Link — same tab; /success only after Stripe redirects post-payment */
-const STRIPE_PAYMENT_LINK = import.meta.env.VITE_STRIPE_PAYMENT_LINK || 'https://buy.stripe.com/00wdR3bYY94te5Z5nYffy00';
+const STRIPE_PAYMENT_LINK = import.meta.env.VITE_STRIPE_PAYMENT_LINK || 'https://buy.stripe.com/test_00wdR3bYY94te5Z5nYffy00';
 const STRIPE_SUCCESS_URL = 'https://budget-planner-production.up.railway.app/success';
 const STRIPE_CANCEL_URL = 'https://budget-planner-production.up.railway.app/cancel';
 
