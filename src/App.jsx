@@ -1654,6 +1654,33 @@ function App() {
     markActiveUnsaved();
   }, [activePlannerId, activeMonthKey, markActiveUnsaved]);
 
+  const handlePanelCellKeyDown = useCallback((e, panelKey, rowIndex, col, key, rowCount) => {
+    if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(key)) return;
+    e.preventDefault();
+    const colNames = ['name', 'planned', 'actual'];
+    const colIndex = colNames.indexOf(col);
+    if (colIndex === -1) return;
+    let targetRow = rowIndex;
+    let targetColIndex = colIndex;
+    if (key === 'ArrowDown' || key === 'Enter') {
+      targetRow = rowIndex + 1;
+    } else if (key === 'ArrowUp') {
+      targetRow = rowIndex - 1;
+    } else if (key === 'ArrowRight') {
+      targetColIndex = Math.min(2, colIndex + 1);
+    } else if (key === 'ArrowLeft') {
+      targetColIndex = Math.max(0, colIndex - 1);
+    }
+    targetRow = Math.max(0, Math.min(rowCount - 1, targetRow));
+    const targetCol = colNames[targetColIndex];
+    const next = document.querySelector(
+      `input[data-panel="${panelKey}"][data-row="${targetRow}"][data-col="${targetCol}"]`
+    );
+    if (next) {
+      next.focus();
+    }
+  }, []);
+
   const handleSelectPlanner = useCallback((id) => {
     setActivePlannerId(id);
     setEditingPlannerId(null);
@@ -2190,7 +2217,7 @@ function App() {
     );
   }
 
-  function SortablePanelRow({ id, row, panelKey, panel, index, canDelete, readOnly }) {
+  function SortablePanelRow({ id, row, panelKey, panel, index, canDelete, readOnly, rowCount, onCellKeyDown }) {
     const {
       attributes,
       listeners,
@@ -2261,12 +2288,14 @@ function App() {
           className="row-input row-name"
           placeholder={row.placeholder || 'Item'}
           value={localName}
+          data-panel={panelKey}
+          data-row={index}
+          data-col="name"
           onChange={(e) => setLocalName(e.target.value)}
           onBlur={commitName}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              commitName();
-              e.target.blur();
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.key) && onCellKeyDown) {
+              onCellKeyDown(e, panelKey, index, 'name', e.key, rowCount);
             }
           }}
           readOnly={readOnly}
@@ -2277,12 +2306,14 @@ function App() {
           className="row-input row-amount"
           placeholder="0"
           value={localPlanned}
+          data-panel={panelKey}
+          data-row={index}
+          data-col="planned"
           onChange={(e) => setLocalPlanned(e.target.value)}
           onBlur={commitPlanned}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              commitPlanned();
-              e.target.blur();
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.key) && onCellKeyDown) {
+              onCellKeyDown(e, panelKey, index, 'planned', e.key, rowCount);
             }
           }}
           min="0"
@@ -2295,12 +2326,14 @@ function App() {
           className="row-input row-amount"
           placeholder="0"
           value={localActual}
+          data-panel={panelKey}
+          data-row={index}
+          data-col="actual"
           onChange={(e) => setLocalActual(e.target.value)}
           onBlur={commitActual}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              commitActual();
-              e.target.blur();
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.key) && onCellKeyDown) {
+              onCellKeyDown(e, panelKey, index, 'actual', e.key, rowCount);
             }
           }}
           min="0"
@@ -2887,7 +2920,7 @@ function App() {
           </div>
         </section>
 
-        <section className="panels-section">
+        <section className="panels-section" style={{ paddingBottom: '200px' }}>
           {PANELS.map((panel) => {
             const rows = panels[panel.key] || [];
             const totals = panelTotals[panel.key] || { planned: 0, actual: 0 };
@@ -2930,6 +2963,8 @@ function App() {
                           index={idx}
                           canDelete={rows.length > 1}
                           readOnly={isExamplePlanner}
+                          rowCount={rows.length}
+                          onCellKeyDown={handlePanelCellKeyDown}
                         />
                       ))}
                     </SortableContext>
