@@ -18,6 +18,6 @@ export default defineConfig({
   preview: {
     host: '0.0.0.0',
     port: 8080,
-    allowedHosts: ['all', 'budget-planner-production.up.railway.app']
+    allowedHosts: ['all', 'budget-planner-production.up.railway.app', 'buybudgetflow.com', 'www.buybudgetflow.com']
   }
 })
