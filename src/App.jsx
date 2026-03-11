@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, UserButton, useUser } from '@clerk/clerk-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
@@ -1654,9 +1654,17 @@ function App() {
     markActiveUnsaved();
   }, [activePlannerId, activeMonthKey, markActiveUnsaved]);
 
+  const pendingPanelNavRef = useRef(null);
+
   const handlePanelCellKeyDown = useCallback((e, panelKey, rowIndex, col, key, rowCount) => {
     if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(key)) return;
     e.preventDefault();
+    pendingPanelNavRef.current = { panelKey, rowIndex, col, key, rowCount };
+  }, []);
+
+  const handlePanelCellFocusTarget = useCallback((pending) => {
+    if (!pending) return;
+    const { panelKey, rowIndex, col, key, rowCount } = pending;
     const colNames = ['name', 'planned', 'actual'];
     const colIndex = colNames.indexOf(col);
     if (colIndex === -1) return;
@@ -2217,7 +2225,7 @@ function App() {
     );
   }
 
-  function SortablePanelRow({ id, row, panelKey, panel, index, canDelete, readOnly, rowCount, onCellKeyDown }) {
+  function SortablePanelRow({ id, row, panelKey, panel, index, canDelete, readOnly, rowCount, onCellKeyDown, pendingPanelNavRef, onCellFocusTarget }) {
     const {
       attributes,
       listeners,
@@ -2292,10 +2300,18 @@ function App() {
           data-row={index}
           data-col="name"
           onChange={(e) => setLocalName(e.target.value)}
-          onBlur={commitName}
+          onFocus={(e) => e.target.setSelectionRange(e.target.value.length, e.target.value.length)}
+          onBlur={() => {
+            commitName();
+            if (pendingPanelNavRef?.current) {
+              onCellFocusTarget?.(pendingPanelNavRef.current);
+              pendingPanelNavRef.current = null;
+            }
+          }}
           onKeyDown={(e) => {
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.key) && onCellKeyDown) {
               onCellKeyDown(e, panelKey, index, 'name', e.key, rowCount);
+              e.target.blur();
             }
           }}
           readOnly={readOnly}
@@ -2310,10 +2326,18 @@ function App() {
           data-row={index}
           data-col="planned"
           onChange={(e) => setLocalPlanned(e.target.value)}
-          onBlur={commitPlanned}
+          onFocus={(e) => e.target.setSelectionRange(e.target.value.length, e.target.value.length)}
+          onBlur={() => {
+            commitPlanned();
+            if (pendingPanelNavRef?.current) {
+              onCellFocusTarget?.(pendingPanelNavRef.current);
+              pendingPanelNavRef.current = null;
+            }
+          }}
           onKeyDown={(e) => {
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.key) && onCellKeyDown) {
               onCellKeyDown(e, panelKey, index, 'planned', e.key, rowCount);
+              e.target.blur();
             }
           }}
           min="0"
@@ -2330,10 +2354,18 @@ function App() {
           data-row={index}
           data-col="actual"
           onChange={(e) => setLocalActual(e.target.value)}
-          onBlur={commitActual}
+          onFocus={(e) => e.target.setSelectionRange(e.target.value.length, e.target.value.length)}
+          onBlur={() => {
+            commitActual();
+            if (pendingPanelNavRef?.current) {
+              onCellFocusTarget?.(pendingPanelNavRef.current);
+              pendingPanelNavRef.current = null;
+            }
+          }}
           onKeyDown={(e) => {
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.key) && onCellKeyDown) {
               onCellKeyDown(e, panelKey, index, 'actual', e.key, rowCount);
+              e.target.blur();
             }
           }}
           min="0"
@@ -2965,6 +2997,8 @@ function App() {
                           readOnly={isExamplePlanner}
                           rowCount={rows.length}
                           onCellKeyDown={handlePanelCellKeyDown}
+                          pendingPanelNavRef={pendingPanelNavRef}
+                          onCellFocusTarget={handlePanelCellFocusTarget}
                         />
                       ))}
                     </SortableContext>
